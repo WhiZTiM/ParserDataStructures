@@ -1,15 +1,3 @@
-/* 
- * LICENSE
- * =======
- * Distributed under the Boost Software License, Version 1.0.
- *      (See accompanying file LICENSE_1_0.txt or copy at
- *          http://www.boost.org/LICENSE_1_0.txt)
- *
- * Author: Ibrahim Timothy Onogu
- * Email:  ionogu@acm.org
- * Date:   DD/MM/2016
- */
- 
 #ifndef STRING_H
 #define STRING_H
 #include "Config.hpp"
@@ -22,7 +10,7 @@ template<typename Char>
 class Basic_fstring
 {
     public:
-        static constexpr int kSS = 16;
+        static constexpr int kSS = 8;
         Basic_fstring(){};
 
         template<SizeType N>
@@ -118,11 +106,11 @@ class Basic_fstring
 
         template<Char> friend void swap(Basic_fstring&, Basic_fstring&);
 
-    private:
         union Data {
             Char local[kSS];
             Char* heap;
         };
+    private:
 
         Data m_data;
         SizeType m_size = 0;

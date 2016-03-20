@@ -1,15 +1,3 @@
-/* 
- * LICENSE
- * =======
- * Distributed under the Boost Software License, Version 1.0.
- *      (See accompanying file LICENSE_1_0.txt or copy at
- *          http://www.boost.org/LICENSE_1_0.txt)
- *
- * Author: Ibrahim Timothy Onogu
- * Email:  ionogu@acm.org
- * Date:   DD/MM/2016
- */
-
 #ifndef FVECTOR_H
 #define FVECTOR_H
 
@@ -105,10 +93,12 @@ public:
     void reserve(SizeType sz){
         if(sz > m_capacity){
             T* data = static_cast<T*>(SFAllocator<T>::allocate(sz));
-            m_capacity = sz;
             for(SizeType i=0; i < m_size; i++){
-                new(data+i) T(std::move(*(m_data+i)));       //! TODO: move if only noexcept;
+                new(data+i) T(std::move(m_data[i]));       //! TODO: move if only noexcept;
+                call_destructor(m_data[i]);
             }
+            SFAllocator<T>::dellocate(m_data);
+            m_capacity = sz;
             m_data = data;
         }
     }

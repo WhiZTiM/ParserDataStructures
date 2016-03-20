@@ -99,7 +99,7 @@ int main()
     cout << "\n---------------------\n";
 
     FVector<FString> fv = {"This ", "better ", "be ", "good ", "hmmn " };
-    for(int i=0; i<fv.size(); i++)
+    for(SizeType i=0; i<fv.size(); i++)
         cout << fv[i];
     cout << endl;
 
