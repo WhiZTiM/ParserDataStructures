@@ -11,21 +11,21 @@ class Basic_fstring
 {
     public:
         static constexpr int kSS = 8;
-        Basic_fstring(){};
+        Basic_fstring(){}
 
         template<SizeType N>
         Basic_fstring(const Char (&data)[N]){
             construct_from(data, N);
         }
 
-        Basic_fstring(const std::string& str){
-            construct_from(str.data(), str.size());
+        Basic_fstring(const std::basic_string<Char>& str){
+            construct_from(str.c_str(), str.size()+1);
         }
 
-        FORCE_INLINE ~Basic_fstring() { clear(); }
+        FORCE_INLINE ~Basic_fstring() { destroy(); }
 
         Basic_fstring(const Basic_fstring& other){
-            clear();
+            destroy();
             copy_from(other);
         }
 
@@ -36,7 +36,7 @@ class Basic_fstring
         FORCE_INLINE Basic_fstring& operator = (Basic_fstring&& other) noexcept {
             if(this == &other)
                 return *this;
-            clear();
+            destroy();
             move_from(std::move(other));
             return *this;
         }
@@ -44,7 +44,7 @@ class Basic_fstring
         FORCE_INLINE Basic_fstring& operator = (const Basic_fstring& other){
             if(this == &other)
                 return this;
-            clear();
+            destroy();
             copy_from(other);
             return *this;
         }
@@ -65,19 +65,7 @@ class Basic_fstring
         }
 
         void FORCE_INLINE clear() noexcept {
-            if(!(m_size < kSS))
-                delete m_data.heap;
-        }
-
-        static Basic_fstring own_string_from_buffer(Char* ch, SizeType sz){
-            Basic_fstring rtn;
-            rtn.m_size = sz;
-            if(sz < kSS){
-                std::memcpy(rtn.m_data.local, ch, sz);
-                delete ch;
-            }
-            else
-                rtn.m_data.heap = ch;
+            destroy();
         }
 
         inline static int FORCE_INLINE compare(Basic_fstring const& lhs, Basic_fstring const& rhs) noexcept {
@@ -141,6 +129,12 @@ class Basic_fstring
                 std::memcpy(m_data.heap, ch, sizeof(Char)*sz);
             }
         }
+
+        void FORCE_INLINE destroy() noexcept {
+            if(!(m_size < kSS))
+                delete m_data.heap;
+            m_size = 0;
+        }
 };
 
 template<typename Char> inline FORCE_INLINE
@@ -192,8 +186,8 @@ inline std::basic_istream<Char>& operator >> (std::basic_istream<Char>& i, Basic
 
 template<typename Char>
 inline std::basic_ostream<Char>& operator << (std::basic_ostream<Char>& o, Basic_fstring<Char> const& str){
-    for(SizeType i=0; i < str.size(); i++)
-        o << str[i];
+    if(str.size() > 0)
+        o << &str[0];
     return o;
 }
 

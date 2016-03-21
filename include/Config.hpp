@@ -2,6 +2,7 @@
 #define PLATFORM_CONFIG_H
 
 #include <new>
+#include <iterator>
 #include <type_traits>
 
 #ifdef __GNUC__

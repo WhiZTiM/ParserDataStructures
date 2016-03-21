@@ -1,6 +1,7 @@
 #include <iostream>
 #include <string>
 #include "HashMap.hpp"
+#include "FVector.hpp"
 #include "String.hpp"
 
 #include <deque>
@@ -58,6 +59,9 @@ void __attribute__((optimize("O0"))) test_StdVector(){
         auto mm = FString("small");
         FString mmn = "Very very heavy stuff here ohfs";
         fv.push_back(mm);
+        fv.push_back(mm);
+        fv.push_back(mm);
+        fv.push_back(mm);
         fv.push_back(std::move(mm));
     }
 }
@@ -73,6 +77,9 @@ void __attribute__((optimize("O0"))) test_FVector(){
         auto mm = FString("small");
         FString mmn = "Very very heavy stuff here ohfs";
         fv.push_back(mm);
+        fv.push_back(mm);
+        fv.push_back(mm);
+        fv.push_back(mm);
         fv.push_back(std::move(mm));
     }
 }
@@ -81,6 +88,10 @@ struct S{ char ch[24]; };
 
 int main()
 {
+
+    HashMap<std::string, int> mpx;
+    mpx.insert({"Funny", 456});
+    mpx.insert({"Funny", 4456});
 
     cout << "Running CustomString....\n";
     timeit(randomString);
@@ -103,8 +114,13 @@ int main()
         cout << fv[i];
     cout << endl;
 
+    {
+        std::vector<FString> p; p.push_back("Qu"); p.push_back("Qa"); p.push_back("Ql"); p.push_back("Fu"); p.push_back("Mu");
+        cout << "capacity of std::vector<FString>: " << p.capacity() << endl;
+    }
     cout << "Size of vector<S>: " << sizeof(FVector<char>) << " bytes" << endl;
     cout << "Size of Map<string, S>: " << sizeof(HashMap<std::string, S>) << " bytes" << endl;
+
 /*
     String mm("This is epic");
 

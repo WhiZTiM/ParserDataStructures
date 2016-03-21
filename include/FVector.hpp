@@ -54,6 +54,10 @@ public:
         return m_size;
     }
 
+    inline SizeType capacity() const {
+        return m_capacity;
+    }
+
     inline T& FORCE_INLINE operator [] (SizeType idx){
         return m_data[idx];
     }
