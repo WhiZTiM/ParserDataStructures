@@ -49,9 +49,18 @@ class Basic_fstring
             return *this;
         }
 
+        inline FORCE_INLINE Char* data () {
+            return m_size < kSS ? static_cast<Char*>(m_data.local) : m_data.heap;
+        }
+
+        inline FORCE_INLINE const Char* c_str () const {
+            return const_cast<Basic_fstring*>(this)->data();
+        }
+
         inline FORCE_INLINE Char& operator [] (SizeType idx) {
             return m_size < kSS ? static_cast<Char*>(m_data.local)[idx] : m_data.heap[idx];
         }
+
         inline FORCE_INLINE Char const& operator [] (SizeType idx) const {
             return const_cast<Basic_fstring&>(*this).operator[](idx);
         }
