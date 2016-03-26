@@ -77,15 +77,20 @@ class HashMap
 
         void erase(const Key& ky){
             auto index = hash(ky, m_bucketSize);
-            auto& node = m_buckets[index];
-            if(node->key == ky){
-                if(node->next){
-                    auto cn = node;
-                    node = node->next;
-                    delete cn;
-                }
-                else delete node;
-                node = nullptr;
+            auto& bucket = m_buckets[index];
+            auto left = bucket;
+
+            if(bucket && bucket->key == k){
+                auto nxt = bucket->next;
+                delete bucket;
+                bucket = nxt;
+            }
+
+            while(left->next){
+                auto nxt = left->next->next;
+                if(left->next->key == ky)
+                    delete nxt;
+                left->next = nxt;
             }
         }
 
@@ -165,8 +170,10 @@ class HashMap
                         auto currentNode = node;
                         node = node->next;
                         delete currentNode;
+                        --m_nodeSize;
                     }
                     delete m_buckets[i];
+                    --m_nodeSize;
                 }
             }
             SFAllocator<HashNode**>::deallocate(m_buckets);
