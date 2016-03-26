@@ -1,3 +1,15 @@
+/*
+* ParserDataStructures
+*
+* Distributed under the Boost Software License, Version 1.0.
+* (See accompanying file LICENSE_1_0.txt or copy at
+* http://www.boost.org/LICENSE_1_0.txt)
+*
+* Author: Ibrahim Timothy Onogu
+* Email: ionogu@acm.org
+* Project Date: March, 2016
+*/
+
 #ifndef PLATFORM_CONFIG_H
 #define PLATFORM_CONFIG_H
 
