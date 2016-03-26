@@ -20,9 +20,15 @@ public:
     static inline void* FORCE_INLINE allocate(SizeType sz){
         return operator new(sz * sizeof(T));
     }
-    static inline void FORCE_INLINE dellocate(void* m){
+    static inline void FORCE_INLINE deallocate(void* m){
         operator delete (m);
     }
 };
+
+template <typename T>
+inline void nulled_delete(T* ptr){
+    delete ptr;
+    ptr = nullptr;
+}
 
 #endif // PLATFORM_CONFIG_H
