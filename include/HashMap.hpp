@@ -7,6 +7,7 @@
 #include <forward_list>
 #include "Config.hpp"
 #include <iostream>
+#include <String.hpp>
 
 using namespace std;
 
@@ -15,12 +16,18 @@ inline SizeType FORCE_INLINE hash_it(const T& t){
     return std::hash<T>()(t);
 }
 
+template<>
+inline SizeType FORCE_INLINE hash_it<FString>(const FString& t){
+    return std::hash<const char*>()(t.c_str());
+}
+
 template<typename Key, typename Value>
 class HashMap
 {
     public:
         using value_type = std::pair<const Key&, Value&>;
         class iterator;
+        using const_iterator = const iterator;
 
         HashMap() {  /*******/  }
         ~HashMap(){  destroy(); }
@@ -34,13 +41,13 @@ class HashMap
         }
 
         HashMap& operator=(HashMap&& other) noexcept{
-            if(this = &other) return *this;
+            if(this == &other) return *this;
             destroy();
             move_from(std::move(other));
         }
 
         HashMap& operator=(const HashMap& other){
-            if(this = &other) return *this;
+            if(this == &other) return *this;
             destroy();
             copy_from(other);
         }
@@ -53,8 +60,42 @@ class HashMap
             if(m_nodeSize == m_bucketSize)
                 reserve((m_bucketSize+1) * 2);
             cout << "m_buckets is now: " << m_buckets << endl;
-            (void) imbue_data(kv.first, kv.second, m_buckets, m_bucketSize);
+            imbue_data(kv.first, kv.second, m_buckets, m_bucketSize);
         }
+
+        iterator find(const Key& ky) {
+            return getNode(ky);
+        }
+
+        const_iterator find(const Key& ky) const {
+            return getNode(ky);
+        }
+
+        void erase(const iterator& iter){
+            erase(iter.currentNode->key);
+        }
+
+        void erase(const Key& ky){
+            auto index = hash(ky, m_bucketSize);
+            auto& node = m_buckets[index];
+            if(node->key == ky){
+                if(node->next){
+                    auto cn = node;
+                    node = node->next;
+                    delete cn;
+                }
+                else delete node;
+                node = nullptr;
+            }
+        }
+
+        iterator begin()                { return iterator(this); }
+        const_iterator begin() const    { return iterator(this); }
+        const_iterator cbegin() const   { return iterator(this); }
+
+        iterator end()                  { return iterator(); }
+        const_iterator end() const      { return iterator(); }
+        const_iterator cend() const     { return iterator(); }
 
         inline void reserve(SizeType sz){
             if(sz > m_bucketSize){
@@ -72,13 +113,13 @@ class HashMap
                 SizeType counter = 0;
                 for(SizeType i = 0; i < m_bucketSize; i++){
                     if(m_buckets[i]){
-                        (void)imbue_data(m_buckets[i]->key, m_buckets[i]->value, data, sz, counter);
+                        imbue_data(m_buckets[i]->key, m_buckets[i]->value, data, sz, counter);
                         for(auto link = m_buckets[i]->next; link; link = link->next)
-                            (void)imbue_data(m_buckets[i]->key, m_buckets[i]->value, data, counter);
+                            imbue_data(m_buckets[i]->key, m_buckets[i]->value, data, counter);
                         delete m_buckets[i];
                     }
                 }
-                SFAllocator<HashNode*>::dellocate(m_buckets);
+                SFAllocator<HashNode*>::deallocate(m_buckets);
                 m_nodeSize = counter;
                 m_bucketSize = sz;
                 m_buckets = data;
@@ -94,6 +135,7 @@ class HashMap
         struct HashNode{
             const Key key;
             Value value;
+            ~HashNode() = default;
             HashNode* next;
         };
 
@@ -115,22 +157,34 @@ class HashMap
         }
 
         inline void destroy() noexcept {
-            //
+            cout << "Destructor: m_buckets:" << m_buckets << endl;
+            for(SizeType i=0; i < m_bucketSize; i++){
+                cout << "Destructor: m_buckets[" << i << "] : " << m_buckets[i] << endl;
+                if(m_buckets[i]){
+                    for(auto node = m_buckets[i]->next; node != nullptr;){
+                        auto currentNode = node;
+                        node = node->next;
+                        delete currentNode;
+                    }
+                    delete m_buckets[i];
+                }
+            }
+            SFAllocator<HashNode**>::deallocate(m_buckets);
         }
 
-        inline HashNode* FORCE_INLINE imbue_data(const Key& ky, Value& val, HashNode** mem, SizeType memSize){
+        inline HashNode* imbue_data(const Key& ky, Value& val, HashNode** mem, SizeType memSize){
             SizeType usless = 0;
             return imbue_data(ky, val, mem, memSize, usless);
         }
 
-        inline HashNode* FORCE_INLINE imbue_data(const Key& ky, Value& val, HashNode** mem, SizeType memSize, SizeType& counter){
+        inline HashNode* imbue_data(const Key& ky, Value& val, HashNode** mem, SizeType memSize, SizeType& counter){
             auto index = hash(ky, memSize);
             HashNode*& node = mem[index];
             cout << "Node is " << node << endl;
             if(node){
                 HashNode* link = node;
                 if(node->key == ky){
-                    cout << "added " << ky << " : " << val << " primary node at pos: " << hash(ky, memSize) << endl;
+                    cout << " Didn't add " << ky << " : " << val << " primary node at pos: " << hash(ky, memSize) << endl;
                     return node;
                 }
                 else{
@@ -144,21 +198,26 @@ class HashMap
                 return link->next;
             }
             node = new HashNode{ ky, std::move(val), nullptr };
+            cout << "NODE ADDED KEY: key=" << ky << "     node->key=" << node->key << endl;
+            //delete node;
+            //node = new HashNode{ ky, std::move(val), nullptr };
             ++counter;
+            cout << " added " << ky << " : " << val << " primary node at pos: " << hash(ky, memSize) << "  addr: " << node << endl;
             return node;
         }
 
         inline iterator FORCE_INLINE getNode(const Key& ky) const {
-            HashNode* node = m_buckets[hash(ky, m_buckets)];
+            SizeType idx = hash(ky, m_buckets);
+            HashNode* node = m_buckets[idx];
             if(node){
                 HashNode* link = node;
                 if(node->key == ky){
-                    return iterator(this, node);
+                    return iterator(this, node, idx);
                 }
                 else{
                     for(link = node->next; link; link = link->next)
                         if(link->key == ky)
-                            return iterator(this, link);
+                            return iterator(this, link, idx);
                 }
             }
             return iterator{};
@@ -175,8 +234,8 @@ public:
             iterator(HashMap<Key, Value>* hmp) : hashMap(hmp) {
                 go_to_next(true);
             }
-            iterator(HashMap<Key, Value> *hmp, HashNode* nd) :
-                hashMap(hmp), currentNode(nd) {
+            iterator(HashMap<Key, Value> *hmp, HashNode* nd, SizeType index) :
+                hashMap(hmp), currentNode(nd), idx(index) {
                 //
             }
 
@@ -200,6 +259,7 @@ public:
             }
 
         private:
+            friend class HashMap<Key, Value>;
             HashMap<Key, Value>* hashMap = nullptr;
             mutable HashNode* currentNode = nullptr;
             mutable SizeType idx = 0;

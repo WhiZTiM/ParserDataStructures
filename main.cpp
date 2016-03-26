@@ -89,10 +89,13 @@ struct S{ char ch[24]; };
 int main()
 {
 
-    HashMap<std::string, int> mpx;
+    HashMap<FString, int> mpx;
     mpx.insert({"Funny", 456});
     mpx.insert({"Funny", 4456});
+    //rmpx.erase("Funny");
+    mpx.erase(mpx.begin());
 
+/*
     cout << "Running CustomString....\n";
     timeit(randomString);
     cout << "\n---------------------\n";
@@ -120,7 +123,7 @@ int main()
     }
     cout << "Size of vector<S>: " << sizeof(FVector<char>) << " bytes" << endl;
     cout << "Size of Map<string, S>: " << sizeof(HashMap<std::string, S>) << " bytes" << endl;
-
+*/
 /*
     String mm("This is epic");
 
