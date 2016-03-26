@@ -34,6 +34,10 @@ class Basic_fstring
             construct_from(str.c_str(), str.size()+1);
         }
 
+        Basic_fstring(Char* ch){
+            construct_from(ch, strlen(ch)+1);
+        }
+
         FORCE_INLINE ~Basic_fstring() { destroy(); }
 
         Basic_fstring(const Basic_fstring& other){
