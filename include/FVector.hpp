@@ -16,11 +16,11 @@ public:
     FVector(){}
 
     FVector(SizeType sz){
-        reserve(sz);
+        resize(sz);
     }
 
     FVector(SizeType sz, reserve_tag_t){
-        resize(sz);
+        reserve(sz);
     }
 
     FVector(std::initializer_list<T> ls){
@@ -47,7 +47,7 @@ public:
     }
 
     ~FVector() noexcept {
-        SFAllocator<T>::dellocate(m_data);
+        SFAllocator<T>::deallocate(m_data);
     }
 
     inline SizeType FORCE_INLINE size() const {
@@ -101,7 +101,7 @@ public:
                 new(data+i) T(std::move(m_data[i]));       //! TODO: move if only noexcept;
                 call_destructor(m_data[i]);
             }
-            SFAllocator<T>::dellocate(m_data);
+            SFAllocator<T>::deallocate(m_data);
             m_capacity = sz;
             m_data = data;
         }
