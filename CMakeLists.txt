@@ -5,5 +5,13 @@ set(INCLUDE_DIR include)
 include_directories (${INCLUDE_DIR})
 #include_directories (include)
 aux_source_directory(. SRC_LIST)
-add_executable(${PROJECT_NAME} ${SRC_LIST})
+#add_executable(${PROJECT_NAME} ${SRC_LIST})
+add_executable(${PROJECT_NAME} test)
 
+file(GLOB HEADER_FILES_LIB "include/*.hpp")
+add_subdirectory(test)
+
+FILE(GLOB_RECURSE LibFiles "include/*.hpp")
+add_custom_target(headers SOURCES ${LibFiles})
+
+target_link_libraries(${PROJECT_NAME} ParserDataStructureTest)

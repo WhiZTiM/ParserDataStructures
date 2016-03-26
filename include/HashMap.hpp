@@ -65,7 +65,7 @@ class HashMap
             copy_from(other);
         }
 
-        inline SizeType FORCE_INLINE size(){
+        inline SizeType FORCE_INLINE size() const {
             return m_nodeSize();
         }
 
@@ -74,6 +74,14 @@ class HashMap
                 reserve((m_bucketSize+1) * 2);
             cout << "m_buckets is now: " << m_buckets << endl;
             imbue_data(kv.first, kv.second, m_buckets, m_bucketSize);
+        }
+
+        Value& operator [] (const Key& ky){
+            return (*getNode(ky)).second;
+        }
+
+        const Value& operator [] (const Key& ky) const {
+            return (*getNode(ky)).second;
         }
 
         iterator find(const Key& ky) {
@@ -93,7 +101,7 @@ class HashMap
             auto& bucket = m_buckets[index];
             auto left = bucket;
 
-            if(bucket && bucket->key == k){
+            if(bucket && bucket->key == ky){
                 auto nxt = bucket->next;
                 delete bucket;
                 bucket = nxt;
