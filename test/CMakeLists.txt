@@ -1,3 +1,5 @@
-include_directories("..")
+#include_directories(..)
+set(INCLUDE_DIR ../include)
+include_directories (${INCLUDE_DIR})
 FILE(GLOB TEST_INCLUDE_FILES "*.hpp" "*.cpp")
-add_library(ParserDataStructureTest STATIC ${TEST_INCLUDE_FILES})
+#add_library(ParserDataStructureTest STATIC ${TEST_INCLUDE_FILES})

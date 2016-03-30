@@ -252,13 +252,11 @@ class HashMap
         }
 
 public:
-        class iterator : std::iterator<
+        class iterator : public std::iterator<
                 std::forward_iterator_tag,
                 std::pair<Key, Value>
                 >
         {
-        public:
-            iterator(){}
             iterator(HashMap<Key, Value>* hmp) : hashMap(hmp) {
                 go_to_next(true);
             }
@@ -266,7 +264,8 @@ public:
                 hashMap(hmp), currentNode(nd), idx(index) {
                 //
             }
-
+        public:
+            iterator(){}
             ~iterator(){}
             iterator(const iterator& other) = default;
             iterator& operator = (const iterator& other) = default;
@@ -284,6 +283,13 @@ public:
                 iterator tmp(*this);
                 go_to_next();
                 return tmp;
+            }
+
+            friend bool operator == (const iterator& lhs, const iterator& rhs){
+                return lhs.currentNode == rhs.currentNode;
+            }
+            friend bool operator != (const iterator& lhs, const iterator& rhs){
+                return ! (lhs.currentNode == rhs.currentNode);
             }
 
         private:

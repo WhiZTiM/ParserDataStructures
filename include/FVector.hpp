@@ -15,6 +15,7 @@
 
 #include "Config.hpp"
 #include <utility>
+#include <type_traits>
 #include <initializer_list>
 using SizeType = uint32_t;
 
@@ -22,6 +23,9 @@ template<typename T>
 class FVector{
 
 public:
+
+    using value_type = T;
+
     struct reserve_tag_t{};
     static reserve_tag_t reserve_tag;
 
@@ -36,8 +40,7 @@ public:
     }
 
     FVector(std::initializer_list<T> ls){
-        for(auto& x : ls)
-            push_back(x);
+        emplace_back(ls);
     }
 
     FVector(FVector&& other) noexcept {
@@ -66,15 +69,15 @@ public:
         return m_size;
     }
 
-    inline SizeType capacity() const {
+    inline SizeType FORCE_INLINE capacity() const {
         return m_capacity;
     }
 
-    inline T& FORCE_INLINE operator [] (SizeType idx){
+    inline FORCE_INLINE T& operator [] (SizeType idx){
         return m_data[idx];
     }
 
-    inline T const& FORCE_INLINE operator [] (SizeType idx) const{
+    inline FORCE_INLINE T const& operator [] (SizeType idx) const{
         return m_data[idx];
     }
 
@@ -86,12 +89,34 @@ public:
         emplace_back(std::move(val));
     }
 
+    T& back(){ return m_data[m_size-1]; }
+    const T& back() const { return m_data[m_size-1]; }
+
+    void pop_back() {
+        call_destructor(m_data[m_size - 1]);
+        --m_size;
+    }
+
     template<typename... Args>
     void emplace_back(Args&&... arg){
         if(m_size >= m_capacity)
-            reserve((m_size+1) * 2);
+            //reserve((m_size+1) * 2);
+            grow_capacity();
         new(m_data+m_size) T(std::forward<T>(arg)...);
         m_size += 1;
+    }
+
+    void emplace_back(std::initializer_list<T> ls){
+        if(ls.size() + m_size >= m_capacity){
+            if(ls.size() + m_size >= (m_capacity+1)*2)
+                reserve(ls.size() + m_size);
+            else
+                grow_capacity();
+        }
+        unsigned idx = 0;
+        for(auto it = std::begin(ls); it != std::end(ls); ++it)
+            new(m_data + m_size + idx++) T(*it);
+        m_size += idx;
     }
 
     template<typename... Arg>
@@ -158,6 +183,55 @@ private:
     template<typename U> inline
     std::enable_if_t<!std::is_class<U>::value, void>
     FORCE_INLINE call_destructor(U&){}
+
+    void inline FORCE_INLINE grow_capacity() { reserve((m_capacity+1) * 2); }
+
+    struct detail {
+        template<bool isConst>
+        class iterator : public std::iterator<std::bidirectional_iterator_tag, T>
+        {
+            template<typename U>
+            using Qualified = std::conditional_t<isConst, std::add_const_t<U>, U>;
+            //using base = typename std::iterator<std::bidirectional_iterator_tag, T>;
+
+            iterator(T* data) : ptr(data){}
+        public:
+            iterator() = default;
+            iterator(const iterator&) = default;
+            iterator& operator = (const iterator&) = default;
+
+            Qualified<T>* operator -> () const { return ptr; }
+            Qualified<T>& operator * () const { return *ptr; }
+            Qualified<iterator>& operator ++ () const { ++ptr; return *const_cast<iterator*>(this); }
+            Qualified<iterator>& operator ++ (int) const { iterator t(*this); ++ptr; return t; }
+            Qualified<iterator>& operator -- () const { --ptr; return *const_cast<iterator*>(this); }
+            Qualified<iterator>& operator -- (int) const { iterator t(*this); --ptr; return t; }
+            Qualified<iterator> operator + (SizeType idx) const { return iterator(ptr + idx); }
+            Qualified<iterator> operator - (SizeType idx) const { return iterator(ptr - idx); }
+            Qualified<T>& operator [] (std::ptrdiff_t idx) const { return *(ptr + idx); }
+            std::ptrdiff_t operator - (const iterator& other) const { return (ptr - other.ptr); }
+
+            friend bool operator == (const iterator& lhs, const iterator& rhs){ return lhs.ptr == rhs.ptr; }
+            friend bool operator != (const iterator& lhs, const iterator& rhs){ return!(lhs.ptr == rhs.ptr); }
+            friend bool operator <  (const iterator& lhs, const iterator& rhs){ return (rhs.ptr - lhs.ptr) > 0; }
+        private:
+            friend class FVector<T>;
+            mutable T* ptr = nullptr;
+        };
+    };
+
+public:
+    using iterator = typename detail::template iterator<false>;
+    using const_iterator = typename detail::template iterator<true>;
+    //using const_iterator = detail::iterator<true>;
+
+    iterator begin() {return iterator(m_data); }
+    const_iterator begin() const {return const_iterator(m_data); }
+    const_iterator cbegin() const {return const_iterator(m_data); }
+
+    iterator end() {return iterator(m_data+m_size); }
+    const_iterator end() const {return const_iterator(m_data+m_size); }
+    const_iterator cend() const {return const_iterator(m_data+m_size); }
 
 };
 

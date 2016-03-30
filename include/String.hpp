@@ -59,7 +59,7 @@ class Basic_fstring
 
         FORCE_INLINE Basic_fstring& operator = (const Basic_fstring& other){
             if(this == &other)
-                return this;
+                return *this;
             destroy();
             copy_from(other);
             return *this;
@@ -69,8 +69,16 @@ class Basic_fstring
             return m_size < kSS ? static_cast<Char*>(m_data.local) : m_data.heap;
         }
 
-        inline FORCE_INLINE const Char* c_str () const {
+        inline FORCE_INLINE const Char* data () const {
             return const_cast<Basic_fstring*>(this)->data();
+        }
+
+        inline FORCE_INLINE const Char* c_str () const {
+            return data();
+        }
+
+        inline FORCE_INLINE std::basic_string<Char> to_string() const {
+            return empty() ? std::basic_string<Char>() : std::basic_string<Char>(data());
         }
 
         inline FORCE_INLINE Char& operator [] (SizeType idx) {
@@ -136,8 +144,8 @@ class Basic_fstring
         inline FORCE_INLINE void copy_from(const Basic_fstring& other){
             if(other.m_size >= kSS){
                 m_size = other.m_size;
-                m_data.heap = new Char[other.m_size];
-                std::strncpy(m_data.heap, other.m_data.heap, other.m_size);
+                m_data.heap = new Char[other.m_size+1];
+                std::memcpy(m_data.heap, other.m_data.heap, other.m_size+1);
             }
             else{
                 m_data = other.m_data;
@@ -146,7 +154,7 @@ class Basic_fstring
         }
 
         inline FORCE_INLINE void construct_from(const Char* ch, SizeType sz){
-            m_size = sz;
+            m_size = sz - 1;
             if(sz < kSS)
                 std::memcpy(&m_data.local, ch, sizeof(Char)*sz);
             else{
