@@ -37,10 +37,94 @@ inline SizeType FORCE_INLINE hash_it<FString>(const FString& t){
 template<typename Key, typename Value>
 class HashMap
 {
+
+
+    struct HashNode{
+        const Key key;
+        Value value;
+        HashNode* next;
+    };
+
+    template<bool isConst>
+    class Iterator : public std::iterator<
+            std::forward_iterator_tag,
+            std::pair<Key, Value>
+            >
+    {
+
+        template<typename U>
+        using Qualified = std::conditional_t<isConst, std::add_const_t<U>, U>;
+
+        Iterator(HashMap<Key, Value>* hmp) : hashMap(hmp) {
+            currentNode = go_to_next(true);
+        }
+        Iterator(HashMap<Key, Value> *hmp, HashNode* nd, SizeType index) :
+            hashMap(hmp), currentNode(nd), idx(index) {
+            //
+        }
+
+    public:
+        Iterator(){}
+        ~Iterator(){}
+        Iterator(const Iterator& other) = default;
+        Iterator& operator = (const Iterator& other) = default;
+
+        std::pair<const Key&, Qualified<Value>&> operator* () const {
+            return {currentNode->key, currentNode->value};
+        }
+
+        Qualified<Iterator>& operator ++ () const {
+            go_to_next();
+            return *const_cast<Iterator*>(this);
+        }
+        Qualified<Iterator>& operator ++ (int) const {
+            Iterator tmp(*this);
+            go_to_next();
+            return tmp;
+        }
+
+        friend bool operator == (const Iterator& lhs, const Iterator& rhs){
+            return lhs.currentNode == rhs.currentNode;
+        }
+        friend bool operator != (const Iterator& lhs, const Iterator& rhs){
+            return ! (lhs.currentNode == rhs.currentNode);
+        }
+
+    private:
+        friend class HashMap<Key, Value>;
+        HashMap<Key, Value>* hashMap = nullptr;
+        mutable HashNode* currentNode = nullptr;
+        mutable SizeType idx = 0;
+
+        HashNode* go_to_next(bool consider_currentNode = true) const {
+            if((consider_currentNode && !currentNode) || !consider_currentNode)
+                for(; idx < hashMap->m_bucketSize; idx++){
+                    if(hashMap->m_buckets[idx]){
+                        currentNode = hashMap->m_buckets[idx++];
+                        return currentNode;
+                    }
+                }
+            else
+                currentNode = currentNode->next ? currentNode->next : go_to_next(false);
+            return nullptr;
+
+        }
+    };
+
+public:
+    using iterator = Iterator<false>;
+    using const_iterator = Iterator<true>;
+
+    iterator begin()                { return iterator(this); }
+    const_iterator begin() const    { return const_iterator(this); }
+    const_iterator cbegin() const   { return const_iterator(this); }
+
+    iterator end()                  { return iterator(); }
+    const_iterator end() const      { return const_iterator(); }
+    const_iterator cend() const     { return const_iterator(); }
+
     public:
         using value_type = std::pair<const Key&, Value&>;
-        class iterator;
-        using const_iterator = const iterator;
 
         HashMap() {  /*******/  }
         ~HashMap(){  destroy(); }
@@ -69,7 +153,7 @@ class HashMap
             return m_nodeSize();
         }
 
-        void insert(std::pair<Key, Value>&& kv){
+        void insert(std::pair<const Key, Value>&& kv){
             if(m_nodeSize == m_bucketSize)
                 reserve((m_bucketSize+1) * 2);
             cout << "m_buckets is now: " << m_buckets << endl;
@@ -115,14 +199,6 @@ class HashMap
             }
         }
 
-        iterator begin()                { return iterator(this); }
-        const_iterator begin() const    { return iterator(this); }
-        const_iterator cbegin() const   { return iterator(this); }
-
-        iterator end()                  { return iterator(); }
-        const_iterator end() const      { return iterator(); }
-        const_iterator cend() const     { return iterator(); }
-
         inline void reserve(SizeType sz){
             if(sz > m_bucketSize){
                 void* addr = SFAllocator<HashNode**>::allocate(sz);
@@ -157,13 +233,6 @@ class HashMap
         }
 
     private:
-
-        struct HashNode{
-            const Key key;
-            Value value;
-            ~HashNode() = default;
-            HashNode* next;
-        };
 
         HashNode** m_buckets = nullptr;
         SizeType m_bucketSize = 0;
@@ -208,7 +277,7 @@ class HashMap
         inline HashNode* imbue_data(const Key& ky, Value& val, HashNode** mem, SizeType memSize, SizeType& counter){
             auto index = hash(ky, memSize);
             HashNode*& node = mem[index];
-            cout << "Node is " << node << endl;
+            cout << "Node is " << node << "\t\tHashed index to be: " << index << endl;
             if(node){
                 HashNode* link = node;
                 if(node->key == ky){
@@ -216,10 +285,11 @@ class HashMap
                     return node;
                 }
                 else{
-                    for(link = node->next; link; link = link->next)
+                    for(link = node; link->next; link = link->next)
                         if(link->key == ky)
                             return link;
                 }
+                cout << "\t\tAND LINK.Key is: " << link->key << endl;
                 link->next = new HashNode{ ky, std::move(val), nullptr };
                 ++counter;
                 cout << "added " << ky << " : " << val << " secondary node at pos: " << hash(ky, memSize) << endl;
@@ -251,67 +321,6 @@ class HashMap
             return iterator{};
         }
 
-public:
-        class iterator : public std::iterator<
-                std::forward_iterator_tag,
-                std::pair<Key, Value>
-                >
-        {
-            iterator(HashMap<Key, Value>* hmp) : hashMap(hmp) {
-                go_to_next(true);
-            }
-            iterator(HashMap<Key, Value> *hmp, HashNode* nd, SizeType index) :
-                hashMap(hmp), currentNode(nd), idx(index) {
-                //
-            }
-        public:
-            iterator(){}
-            ~iterator(){}
-            iterator(const iterator& other) = default;
-            iterator& operator = (const iterator& other) = default;
-            std::pair<const Key&, Value&> operator* () {
-                return {currentNode->key, currentNode->value};
-            }
-            std::pair<const Key&, const Value&> operator* () const {
-                return {currentNode->key, currentNode->value};
-            }
-            iterator& operator ++ () const {
-                go_to_next();
-                return *this;
-            }
-            iterator& operator ++ (int) const {
-                iterator tmp(*this);
-                go_to_next();
-                return tmp;
-            }
-
-            friend bool operator == (const iterator& lhs, const iterator& rhs){
-                return lhs.currentNode == rhs.currentNode;
-            }
-            friend bool operator != (const iterator& lhs, const iterator& rhs){
-                return ! (lhs.currentNode == rhs.currentNode);
-            }
-
-        private:
-            friend class HashMap<Key, Value>;
-            HashMap<Key, Value>* hashMap = nullptr;
-            mutable HashNode* currentNode = nullptr;
-            mutable SizeType idx = 0;
-
-            HashNode* go_to_next(bool consider_currentNode = true) const {
-                if((consider_currentNode && !currentNode) || !consider_currentNode)
-                    for(; idx < hashMap->m_bucketSize; idx++){
-                        if(hashMap->m_buckets[idx]){
-                            currentNode = hashMap->m_buckets[idx];
-                            return currentNode;
-                        }
-                    }
-                else
-                    currentNode = currentNode->next ? currentNode->next : go_to_next(false);
-                return nullptr;
-
-            }
-        };
 };
 
 #endif // HASHMAP_H
