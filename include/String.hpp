@@ -66,7 +66,7 @@ class Basic_fstring
         }
 
         inline FORCE_INLINE Char* data () {
-            return m_size < kSS ? static_cast<Char*>(m_data.local) : m_data.heap;
+            return get_pointer();
         }
 
         inline FORCE_INLINE const Char* data () const {
@@ -82,7 +82,7 @@ class Basic_fstring
         }
 
         inline FORCE_INLINE Char& operator [] (SizeType idx) {
-            return m_size < kSS ? static_cast<Char*>(m_data.local)[idx] : m_data.heap[idx];
+            return get_pointer()[idx];
         }
 
         inline FORCE_INLINE Char const& operator [] (SizeType idx) const {
@@ -136,6 +136,10 @@ class Basic_fstring
         Data m_data;
         SizeType m_size = 0;
 
+        inline FORCE_INLINE Char* get_pointer() const {
+            return m_size < kSS ? const_cast<Char*>(static_cast<const Char*>(m_data.local)) : m_data.heap;
+        }
+
         inline FORCE_INLINE void move_from(Basic_fstring&& other){
             m_data = other.m_data;
             m_size = other.m_size;
@@ -168,6 +172,53 @@ class Basic_fstring
                 delete m_data.heap;
             m_size = 0;
         }
+
+        struct detail {
+            template<bool isConst>
+            class iterator : public std::iterator<std::bidirectional_iterator_tag, Char>
+            {
+                template<typename U>
+                using Qualified = std::conditional_t<isConst, std::add_const_t<U>, U>;
+                //using base = typename std::iterator<std::bidirectional_iterator_tag, T>;
+
+                iterator(Char* data) : ptr(data){}
+            public:
+                iterator() = default;
+                iterator(const iterator&) = default;
+                iterator& operator = (const iterator&) = default;
+
+                Qualified<Char>* operator -> () const { return ptr; }
+                Qualified<Char>& operator * () const { return *ptr; }
+                Qualified<iterator>& operator ++ () const { ++ptr; return *const_cast<iterator*>(this); }
+                Qualified<iterator>& operator ++ (int) const { iterator t(*this); ++ptr; return t; }
+                Qualified<iterator>& operator -- () const { --ptr; return *const_cast<iterator*>(this); }
+                Qualified<iterator>& operator -- (int) const { iterator t(*this); --ptr; return t; }
+                Qualified<iterator> operator + (SizeType idx) const { return iterator(ptr + idx); }
+                Qualified<iterator> operator - (SizeType idx) const { return iterator(ptr - idx); }
+                Qualified<Char>& operator [] (std::ptrdiff_t idx) const { return *(ptr + idx); }
+                std::ptrdiff_t operator - (const iterator& other) const { return (ptr - other.ptr); }
+
+                friend bool operator == (const iterator& lhs, const iterator& rhs){ return lhs.ptr == rhs.ptr; }
+                friend bool operator != (const iterator& lhs, const iterator& rhs){ return!(lhs.ptr == rhs.ptr); }
+                friend bool operator <  (const iterator& lhs, const iterator& rhs){ return (rhs.ptr - lhs.ptr) > 0; }
+            private:
+                friend class Basic_fstring<Char>;
+                mutable Char* ptr = nullptr;
+            };
+        };
+
+    public:
+        using iterator = typename detail::template iterator<false>;
+        using const_iterator = typename detail::template iterator<true>;
+        //using const_iterator = detail::iterator<true>;
+
+        iterator begin() {return iterator(get_pointer()); }
+        const_iterator begin() const {return const_iterator(get_pointer()); }
+        const_iterator cbegin() const {return const_iterator(get_pointer()); }
+
+        iterator end() {return iterator(get_pointer()+m_size); }
+        const_iterator end() const {return const_iterator(get_pointer()+m_size); }
+        const_iterator cend() const {return const_iterator(get_pointer()+m_size); }
 };
 
 template<typename Char> inline FORCE_INLINE
