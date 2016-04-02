@@ -25,12 +25,19 @@
 TEST_CASE( "HashMaps should work", "[hash_map]" ) {
 
     FVector<int> v( 5 );
-    HashMap<std::string, int> mp;
 
-    mp.insert(std::pair<std::string, int>("Haha", 23));
-    mp.insert(std::pair<std::string, int>("Huhu", 283));
-    mp.insert(std::pair<std::string, int>("Yaha", 5234));
-    mp.insert(std::pair<std::string, int>("Maha", -823));
+    using Str = std::string;
+    //using Str = FString;
+
+    HashMap<FString, int> mp;
+
+    mp.insert(std::pair<Str, int>("Haha", 23));
+    mp.insert(std::pair<Str, int>("Huhu", 283));
+    mp.insert(std::pair<Str, int>("Yaha", 5234));
+    mp.insert(std::pair<Str, int>("Maha", -823));
+    mp.insert(std::pair<Str, int>("Kaha", -2423));
+    mp.insert(std::pair<Str, int>("Vaha", -9993));
+    mp.insert(std::pair<Str, int>("loki", -1113));
 
     cout << "\n\n\t\tNOWWW\n\n";
     for(auto x : mp)

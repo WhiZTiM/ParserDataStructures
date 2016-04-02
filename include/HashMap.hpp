@@ -24,14 +24,53 @@
 
 using namespace std;
 
+template<std::size_t max = 1000000,
+         typename Type = typename std::conditional<
+             (max <= std::numeric_limits<std::size_t>::max()), std::size_t, unsigned long
+             >::type
+         >
+class EratosthenesSieve{
+public:
+    static_assert(max > 2, "Sieve size must be greater than 2");
+
+    using value_type = Type;
+
+    inline std::vector<Type> sieve() const {
+
+        std::vector<Type> rtn;
+        rtn.reserve(max);
+        bool flag[max];
+        //! std::fill will use memset
+        std::fill(std::begin(flag) + 2, std::end(flag), false);
+        std::fill(std::begin(flag), std::begin(flag) + 2, true);
+        for(std::size_t index = 2; index < max; index++)
+            if(not flag[index])
+                for(std::size_t i = 2*index; i < max; i += index)
+                    flag[i] = true;
+
+        for(std::size_t idx = 0; idx < max; idx++)
+            if(not flag[idx]){
+                rtn.emplace_back(idx);
+            }
+
+        return rtn;
+    }
+};
+
 template<typename T>
 inline SizeType FORCE_INLINE hash_it(const T& t){
     return std::hash<T>()(t);
 }
 
+//Courtesy of http://programmers.stackexchange.com/a/49566/220592
 template<>
 inline SizeType FORCE_INLINE hash_it<FString>(const FString& t){
-    return std::hash<const char*>()(t.c_str());
+        unsigned long hash = 5381;
+        int c;
+        const unsigned char *str = reinterpret_cast<const unsigned char*>(t.c_str());
+        while ((c = *str++))
+            hash = ((hash << 5) + hash) + c; /* hash * 33 + c */
+        return hash;
 }
 
 template<typename Key, typename Value>
@@ -154,8 +193,10 @@ public:
         }
 
         void insert(std::pair<const Key, Value>&& kv){
-            if(m_nodeSize == m_bucketSize)
-                reserve((m_bucketSize+1) * 2);
+            static std::vector<SizeType> prVec = EratosthenesSieve<1000000, SizeType>().sieve();
+
+            if(m_nodeSize >= m_bucketSize)
+                reserve(prVec[m_bucketSize+7]);
             cout << "m_buckets is now: " << m_buckets << endl;
             imbue_data(kv.first, kv.second, m_buckets, m_bucketSize);
         }
@@ -205,9 +246,9 @@ public:
                 HashNode** data = static_cast<HashNode**>(addr);
                 HashNode* ad2 = static_cast<HashNode*>(addr);
 
-                cout << "Address of void* addr: " << addr << endl;
-                cout << "Address of HashNode** data: " << data << endl;
-                cout << "Address of HashNode* ad2: " << ad2 << endl;
+                //cout << "Address of void* addr: " << addr << endl;
+                //cout << "Address of HashNode** data: " << data << endl;
+                //cout << "Address of HashNode* ad2: " << ad2 << endl;
 
                 (void)ad2;
                 for(SizeType i = 0; i < sz; i++)
@@ -229,6 +270,7 @@ public:
         }
 
         inline SizeType FORCE_INLINE hash(const Key& ky, SizeType sz){
+            cout << "$$$$$$$$$$$$$$KEY: "<< ky << " $$$HASH: " << hash_it(ky) << " % " << sz << " = " << hash_it(ky) % sz << endl;
             return hash_it(ky) % sz;
         }
 
@@ -270,18 +312,17 @@ public:
         }
 
         inline HashNode* imbue_data(const Key& ky, Value& val, HashNode** mem, SizeType memSize){
-            SizeType usless = 0;
-            return imbue_data(ky, val, mem, memSize, usless);
+            return imbue_data(ky, val, mem, memSize, m_nodeSize);
         }
 
         inline HashNode* imbue_data(const Key& ky, Value& val, HashNode** mem, SizeType memSize, SizeType& counter){
             auto index = hash(ky, memSize);
             HashNode*& node = mem[index];
-            cout << "Node is " << node << "\t\tHashed index to be: " << index << endl;
+            //cout << "Node is " << node << "\t\tHashed index to be: " << index << endl;
             if(node){
                 HashNode* link = node;
                 if(node->key == ky){
-                    cout << " Didn't add " << ky << " : " << val << " primary node at pos: " << hash(ky, memSize) << endl;
+                    //cout << " Didn't add " << ky << " : " << val << " primary node at pos: " << hash(ky, memSize) << endl;
                     return node;
                 }
                 else{
@@ -289,7 +330,7 @@ public:
                         if(link->key == ky)
                             return link;
                 }
-                cout << "\t\tAND LINK.Key is: " << link->key << endl;
+                //cout << "\t\tAND LINK.Key is: " << link->key << endl;
                 link->next = new HashNode{ ky, std::move(val), nullptr };
                 ++counter;
                 cout << "added " << ky << " : " << val << " secondary node at pos: " << hash(ky, memSize) << endl;
@@ -300,7 +341,7 @@ public:
             //delete node;
             //node = new HashNode{ ky, std::move(val), nullptr };
             ++counter;
-            cout << " added " << ky << " : " << val << " primary node at pos: " << hash(ky, memSize) << "  addr: " << node << endl;
+            //cout << " added " << ky << " : " << val << " primary node at pos: " << hash(ky, memSize) << "  addr: " << node << endl;
             return node;
         }
 
