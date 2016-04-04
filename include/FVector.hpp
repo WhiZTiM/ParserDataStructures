@@ -188,7 +188,7 @@ private:
 
     struct detail {
         template<bool isConst>
-        class iterator : public std::iterator<std::bidirectional_iterator_tag, T>
+        class iterator : public std::iterator<std::random_access_iterator_tag, T>
         {
             template<typename U>
             using Qualified = std::conditional_t<isConst, std::add_const_t<U>, U>;
@@ -206,6 +206,8 @@ private:
             Qualified<iterator>& operator ++ (int) const { iterator t(*this); ++ptr; return t; }
             Qualified<iterator>& operator -- () const { --ptr; return *const_cast<iterator*>(this); }
             Qualified<iterator>& operator -- (int) const { iterator t(*this); --ptr; return t; }
+            Qualified<iterator>& operator += (SizeType idx) const { ptr +=idx; return *const_cast<iterator*>(this); }
+            Qualified<iterator>& operator -= (SizeType idx) const { ptr -=idx; return *const_cast<iterator*>(this); }
             Qualified<iterator> operator + (SizeType idx) const { return iterator(ptr + idx); }
             Qualified<iterator> operator - (SizeType idx) const { return iterator(ptr - idx); }
             Qualified<T>& operator [] (std::ptrdiff_t idx) const { return *(ptr + idx); }

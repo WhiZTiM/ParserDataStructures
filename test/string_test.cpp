@@ -12,6 +12,8 @@
 //#define CATCH_CONFIG_MAIN
 #include "catch.hpp"
 #include <vector>
+#include <algorithm>
+#include <string>
 #include "String.hpp"
 
 unsigned int Factorial( unsigned int number ) {
@@ -210,5 +212,25 @@ TEST_CASE( "Test Construction and Assingment of Large Strings", "[string]" ) {
 
         auto s = FString(std::string("Hello World!"));
         REQUIRE(str == s);
+    }
+}
+
+TEST_CASE("Using STL algorithm is acceptable", "[string]"){
+
+    FString str = "The quick brown fox jumps over the lazy dog";
+    std::string str2 = "The quick brown fox jumps over the lazy dog";
+
+    REQUIRE(str.size() == str2.size());
+
+    SECTION("Non modifying algorithm"){
+        REQUIRE(std::equal(std::begin(str), std::end(str), std::begin(str2), std::end(str2)));
+
+        std::copy(str2.cbegin(), str2.cend(), str.begin());
+        REQUIRE(std::equal(std::begin(str), std::end(str), std::begin(str2), std::end(str2)));
+    }
+    SECTION("Sorting algorithm"){
+        std::sort(str.begin(), str.end());
+        std::sort(str2.begin(), str2.end());
+        REQUIRE( std::equal(std::begin(str), std::end(str), std::begin(str2), std::end(str2)) );
     }
 }
