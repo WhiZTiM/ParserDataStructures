@@ -97,6 +97,7 @@ class HashMap
         Iterator(HashMap<Key, Value>* hmp) : hashMap(hmp) {
             currentNode = go_to_next(true);
         }
+
         Iterator(HashMap<Key, Value> *hmp, HashNode* nd, SizeType index) :
             hashMap(hmp), currentNode(nd), idx(index) {
             //
@@ -107,6 +108,7 @@ class HashMap
         ~Iterator(){}
         Iterator(const Iterator& other) = default;
         Iterator& operator = (const Iterator& other) = default;
+        operator Iterator<true> () { return Iterator<true>{hashMap, currentNode, idx}; }
 
         std::pair<const Key&, Qualified<Value>&> operator* () const {
             return {currentNode->key, currentNode->value};
@@ -116,7 +118,7 @@ class HashMap
             go_to_next();
             return *const_cast<Iterator*>(this);
         }
-        Qualified<Iterator>& operator ++ (int) const {
+        Qualified<Iterator> operator ++ (int) const {
             Iterator tmp(*this);
             go_to_next();
             return tmp;
@@ -155,8 +157,8 @@ public:
     using const_iterator = Iterator<true>;
 
     iterator begin()                { return iterator(this); }
-    const_iterator begin() const    { return const_iterator(this); }
-    const_iterator cbegin() const   { return const_iterator(this); }
+    const_iterator begin() const    { return const_iterator(const_cast<HashMap*>(this)); }
+    const_iterator cbegin() const   { return const_iterator(const_cast<HashMap*>(this)); }
 
     iterator end()                  { return iterator(); }
     const_iterator end() const      { return const_iterator(); }
@@ -195,7 +197,7 @@ public:
         void insert(std::pair<const Key, Value>&& kv){
             static std::vector<SizeType> prVec = EratosthenesSieve<1000000, SizeType>().sieve();
 
-            if(m_nodeSize >= m_bucketSize)
+            if(m_nodeSize >= m_bucketSize * 1.5)    //load factor of  1 / 1.5  =  0.6666667
                 reserve(prVec[m_bucketSize+7]);
             cout << "m_buckets is now: " << m_buckets << endl;
             imbue_data(kv.first, kv.second, m_buckets, m_bucketSize);
@@ -214,7 +216,7 @@ public:
         }
 
         const_iterator find(const Key& ky) const {
-            return getNode(ky);
+            return const_cast<HashMap*>(this)->getNode(ky);
         }
 
         void erase(const iterator& iter){
@@ -269,7 +271,7 @@ public:
             }
         }
 
-        inline SizeType FORCE_INLINE hash(const Key& ky, SizeType sz){
+        inline SizeType FORCE_INLINE hash(const Key& ky, SizeType sz) const {
             cout << "$$$$$$$$$$$$$$KEY: "<< ky << " $$$HASH: " << hash_it(ky) << " % " << sz << " = " << hash_it(ky) % sz << endl;
             return hash_it(ky) % sz;
         }
@@ -345,8 +347,8 @@ public:
             return node;
         }
 
-        inline iterator FORCE_INLINE getNode(const Key& ky) const {
-            SizeType idx = hash(ky, m_buckets);
+        inline iterator FORCE_INLINE getNode(const Key& ky) {
+            SizeType idx = hash(ky, m_bucketSize);
             HashNode* node = m_buckets[idx];
             if(node){
                 HashNode* link = node;

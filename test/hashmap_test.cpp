@@ -24,10 +24,8 @@
 
 TEST_CASE( "HashMaps should work", "[hash_map]" ) {
 
-    FVector<int> v( 5 );
-
-    using Str = std::string;
-    //using Str = FString;
+    //using Str = std::string;
+    using Str = FString;
 
     HashMap<FString, int> mp;
 
@@ -43,31 +41,46 @@ TEST_CASE( "HashMaps should work", "[hash_map]" ) {
     for(auto x : mp)
         cout << "[" << x.first << ": " << x.second << ']' << endl;
 
-    REQUIRE( v.size() == 5 );
-    REQUIRE( v.capacity() >= 5 );
 
-    SECTION( "resizing bigger changes size and capacity" ) {
-        v.resize( 10 );
-
-        REQUIRE( v.size() == 10 );
-        REQUIRE( v.capacity() >= 10 );
+    SECTION( "All iterator elements exists" ){
+        auto iter = mp.begin();
+        REQUIRE( mp.find((*iter++).first) != mp.end() );
+        REQUIRE( mp.find((*iter++).first) != mp.end() );
+        REQUIRE( mp.find((*iter++).first) != mp.end() );
+        REQUIRE( mp.find((*iter++).first) != mp.end() );
+        REQUIRE( mp.find((*iter++).first) != mp.end() );
+        REQUIRE( mp.find((*iter++).first) != mp.end() );
+        REQUIRE( mp.find((*iter++).first) != mp.end() );
     }
-    SECTION( "resizing smaller changes size but not capacity" ) {
-        v.resize( 0 );
 
-        REQUIRE( v.size() == 0 );
-        REQUIRE( v.capacity() >= 5 );
-    }
-    SECTION( "reserving bigger changes capacity but not size" ) {
-        v.reserve( 10 );
+    SECTION( "All keys Exists "){
+        REQUIRE( mp.find("Haha") != mp.end() );
+        REQUIRE( (*mp.find("Haha")).first == "Haha" );
+        REQUIRE( (*mp.find("Haha")).second == 23 );
 
-        REQUIRE( v.size() == 5 );
-        REQUIRE( v.capacity() >= 10 );
-    }
-    SECTION( "reserving smaller does not change size or capacity" ) {
-        v.reserve( 0 );
+        REQUIRE( mp.find("Huhu") != mp.end() );
+        REQUIRE( (*mp.find("Huhu")).first == "Huhu" );
+        REQUIRE( (*mp.find("Huhu")).second == 283 );
 
-        REQUIRE( v.size() == 5 );
-        REQUIRE( v.capacity() >= 5 );
+        REQUIRE( mp.find("Yaha") != mp.end() );
+        REQUIRE( (*mp.find("Yaha")).first == "Yaha" );
+        REQUIRE( (*mp.find("Yaha")).second == 5234 );
+
+        REQUIRE( mp.find("Maha") != mp.end() );
+        REQUIRE( (*mp.find("Maha")).first == "Maha" );
+        REQUIRE( (*mp.find("Maha")).second == -823 );
+
+        REQUIRE( mp.find("Kaha") != mp.end() );
+        REQUIRE( (*mp.find("Kaha")).first == "Kaha" );
+        REQUIRE( (*mp.find("Kaha")).second == -2423 );
+
+        REQUIRE( mp.find("Vaha") != mp.end() );
+        REQUIRE( (*mp.find("Vaha")).first == "Vaha" );
+        REQUIRE( (*mp.find("Vaha")).second == -9993 );
+
+        REQUIRE( mp.find("loki") != mp.end() );
+        REQUIRE( (*mp.find("loki")).first == "loki" );
+        REQUIRE( (*mp.find("loki")).second == -1113 );
     }
+
 }
