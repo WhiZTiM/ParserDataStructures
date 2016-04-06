@@ -199,7 +199,7 @@ public:
 
             if(m_nodeSize >= m_bucketSize * 1.5)    //load factor of  1 / 1.5  =  0.6666667
                 reserve(prVec[m_bucketSize+7]);
-            cout << "m_buckets is now: " << m_buckets << endl;
+            //cout << "m_buckets is now: " << m_buckets << endl;
             imbue_data(kv.first, kv.second, m_buckets, m_bucketSize);
         }
 
@@ -272,7 +272,7 @@ public:
         }
 
         inline SizeType FORCE_INLINE hash(const Key& ky, SizeType sz) const {
-            cout << "$$$$$$$$$$$$$$KEY: "<< ky << " $$$HASH: " << hash_it(ky) << " % " << sz << " = " << hash_it(ky) % sz << endl;
+            //cout << "$$$$$$$$$$$$$$KEY: "<< ky << " $$$HASH: " << hash_it(ky) << " % " << sz << " = " << hash_it(ky) % sz << endl;
             return hash_it(ky) % sz;
         }
 
@@ -296,9 +296,9 @@ public:
         }
 
         inline void destroy() noexcept {
-            cout << "Destructor: m_buckets:" << m_buckets << endl;
+            //cout << "Destructor: m_buckets:" << m_buckets << endl;
             for(SizeType i=0; i < m_bucketSize; i++){
-                cout << "Destructor: m_buckets[" << i << "] : " << m_buckets[i] << endl;
+                //cout << "Destructor: m_buckets[" << i << "] : " << m_buckets[i] << endl;
                 if(m_buckets[i]){
                     for(auto node = m_buckets[i]->next; node != nullptr;){
                         auto currentNode = node;
@@ -335,11 +335,11 @@ public:
                 //cout << "\t\tAND LINK.Key is: " << link->key << endl;
                 link->next = new HashNode{ {ky, std::move(val)}, nullptr };
                 ++counter;
-                cout << "added " << ky << " : " << val << " secondary node at pos: " << hash(ky, memSize) << endl;
+                //cout << "added " << ky << " : " << val << " secondary node at pos: " << hash(ky, memSize) << endl;
                 return link->next;
             }
             node = new HashNode{ {ky, std::move(val)}, nullptr };
-            cout << "NODE ADDED KEY: key=" << ky << "     node->key=" << node->data.first << endl;
+            //cout << "NODE ADDED KEY: key=" << ky << "     node->key=" << node->data.first << endl;
             //delete node;
             //node = new HashNode{ ky, std::move(val), nullptr };
             ++counter;

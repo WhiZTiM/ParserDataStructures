@@ -24,8 +24,8 @@
 
 TEST_CASE( "HashMaps should work", "[hash_map]" ) {
 
-    //using Str = std::string;
-    using Str = FString;
+    using Str = std::string;
+    //using Str = FString;
 
     HashMap<FString, int> mp;
 
@@ -37,9 +37,9 @@ TEST_CASE( "HashMaps should work", "[hash_map]" ) {
     mp.insert(std::pair<Str, int>("Vaha", -9993));
     mp.insert(std::pair<Str, int>("loki", -1113));
 
-    cout << "\n\n\t\tNOWWW\n\n";
-    for(auto x : mp)
-        cout << "[" << x.first << ": " << x.second << ']' << endl;
+    //cout << "\n\n\t\tNOWWW\n\n";
+    //for(auto x : mp)
+    //    cout << "[" << x.first << ": " << x.second << ']' << endl;
 
 
     SECTION( "All iterator elements exists" ){
@@ -81,6 +81,19 @@ TEST_CASE( "HashMaps should work", "[hash_map]" ) {
         REQUIRE( mp.find("loki") != mp.end() );
         REQUIRE( (*mp.find("loki")).first == "loki" );
         REQUIRE( (*mp.find("loki")).second == -1113 );
+    }
+    SECTION( " Erase works "){
+        auto x = mp.find("Haha");
+        REQUIRE( x != mp.end() );
+
+        mp.erase(x);
+        auto y = mp.find("Haha");
+        REQUIRE( y == mp.end() );
+
+        REQUIRE( mp.find("Vaha") != mp.end() );
+        mp.erase("Vaha");
+        REQUIRE( mp.find("Vaha") == mp.end() );
+
     }
 
 }
