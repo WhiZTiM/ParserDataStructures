@@ -79,20 +79,20 @@ class HashMap
 
 
     struct HashNode{
-        const Key key;
-        Value value;
+        std::pair<const Key, Value> data;
         HashNode* next;
     };
 
     template<bool isConst>
     class Iterator : public std::iterator<
             std::forward_iterator_tag,
-            std::pair<Key, Value>
+            std::pair<const Key, Value>
             >
     {
 
         template<typename U>
         using Qualified = std::conditional_t<isConst, std::add_const_t<U>, U>;
+        using value_type = std::pair<const Key, Value>;
 
         Iterator(HashMap<Key, Value>* hmp) : hashMap(hmp) {
             currentNode = go_to_next(true);
@@ -110,8 +110,8 @@ class HashMap
         Iterator& operator = (const Iterator& other) = default;
         operator Iterator<true> () { return Iterator<true>{hashMap, currentNode, idx}; }
 
-        std::pair<const Key&, Qualified<Value>&> operator* () const {
-            return {currentNode->key, currentNode->value};
+        Qualified<value_type>& operator* () const {
+            return currentNode->data;
         }
 
         Qualified<Iterator>& operator ++ () const {
@@ -220,7 +220,7 @@ public:
         }
 
         void erase(const iterator& iter){
-            erase(iter.currentNode->key);
+            erase(iter.currentNode->data.first);
         }
 
         void erase(const Key& ky){
@@ -228,7 +228,7 @@ public:
             auto& bucket = m_buckets[index];
             auto left = bucket;
 
-            if(bucket && bucket->key == ky){
+            if(bucket && bucket->data.first == ky){
                 auto nxt = bucket->next;
                 delete bucket;
                 bucket = nxt;
@@ -236,7 +236,7 @@ public:
 
             while(left->next){
                 auto nxt = left->next->next;
-                if(left->next->key == ky)
+                if(left->next->data.first == ky)
                     delete nxt;
                 left->next = nxt;
             }
@@ -258,9 +258,9 @@ public:
                 SizeType counter = 0;
                 for(SizeType i = 0; i < m_bucketSize; i++){
                     if(m_buckets[i]){
-                        imbue_data(m_buckets[i]->key, m_buckets[i]->value, data, sz, counter);
+                        imbue_data(m_buckets[i]->data.first, m_buckets[i]->data.second, data, sz, counter);
                         for(auto link = m_buckets[i]->next; link; link = link->next)
-                            imbue_data(m_buckets[i]->key, m_buckets[i]->value, data, counter);
+                            imbue_data(m_buckets[i]->data.first, m_buckets[i]->data.second, data, counter);
                         delete m_buckets[i];
                     }
                 }
@@ -323,23 +323,23 @@ public:
             //cout << "Node is " << node << "\t\tHashed index to be: " << index << endl;
             if(node){
                 HashNode* link = node;
-                if(node->key == ky){
+                if(node->data.first == ky){
                     //cout << " Didn't add " << ky << " : " << val << " primary node at pos: " << hash(ky, memSize) << endl;
                     return node;
                 }
                 else{
                     for(link = node; link->next; link = link->next)
-                        if(link->key == ky)
+                        if(link->data.first == ky)
                             return link;
                 }
                 //cout << "\t\tAND LINK.Key is: " << link->key << endl;
-                link->next = new HashNode{ ky, std::move(val), nullptr };
+                link->next = new HashNode{ {ky, std::move(val)}, nullptr };
                 ++counter;
                 cout << "added " << ky << " : " << val << " secondary node at pos: " << hash(ky, memSize) << endl;
                 return link->next;
             }
-            node = new HashNode{ ky, std::move(val), nullptr };
-            cout << "NODE ADDED KEY: key=" << ky << "     node->key=" << node->key << endl;
+            node = new HashNode{ {ky, std::move(val)}, nullptr };
+            cout << "NODE ADDED KEY: key=" << ky << "     node->key=" << node->data.first << endl;
             //delete node;
             //node = new HashNode{ ky, std::move(val), nullptr };
             ++counter;
@@ -352,12 +352,12 @@ public:
             HashNode* node = m_buckets[idx];
             if(node){
                 HashNode* link = node;
-                if(node->key == ky){
+                if(node->data.first == ky){
                     return iterator(this, node, idx);
                 }
                 else{
                     for(link = node->next; link; link = link->next)
-                        if(link->key == ky)
+                        if(link->data.first == ky)
                             return iterator(this, link, idx);
                 }
             }
