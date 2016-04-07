@@ -114,6 +114,10 @@ class HashMap
             return currentNode->data;
         }
 
+        Qualified<value_type>* operator -> () const {
+            return &currentNode->data;
+        }
+
         Qualified<Iterator>& operator ++ () const {
             go_to_next();
             return *const_cast<Iterator*>(this);
@@ -194,21 +198,17 @@ public:
             return m_nodeSize();
         }
 
-        void insert(std::pair<const Key, Value>&& kv){
+        std::pair<iterator, bool> insert(std::pair<const Key, Value>&& kv){
             static std::vector<SizeType> prVec = EratosthenesSieve<1000000, SizeType>().sieve();
 
             if(m_nodeSize >= m_bucketSize * 1.5)    //load factor of  1 / 1.5  =  0.6666667
-                reserve(prVec[m_bucketSize+7]);
+                reserve(prVec[(m_bucketSize*2)+7]); //grow by a factor of 2... Add 7
             //cout << "m_buckets is now: " << m_buckets << endl;
-            imbue_data(kv.first, kv.second, m_buckets, m_bucketSize);
+            return imbue_data(kv.first, std::move(kv.second), m_buckets, m_bucketSize);
         }
 
         Value& operator [] (const Key& ky){
-            return (*getNode(ky)).second;
-        }
-
-        const Value& operator [] (const Key& ky) const {
-            return (*getNode(ky)).second;
+            return imbue_data(ky, Value{}, m_buckets, m_bucketSize).first->second;
         }
 
         iterator find(const Key& ky) {
@@ -219,7 +219,7 @@ public:
             return const_cast<HashMap*>(this)->getNode(ky);
         }
 
-        void erase(const iterator& iter){
+        void erase(const const_iterator& iter){
             erase(iter.currentNode->data.first);
         }
 
@@ -228,17 +228,20 @@ public:
             auto& bucket = m_buckets[index];
             auto left = bucket;
 
-            if(bucket && bucket->data.first == ky){
-                auto nxt = bucket->next;
-                delete bucket;
-                bucket = nxt;
-            }
-
-            while(left->next){
-                auto nxt = left->next->next;
-                if(left->next->data.first == ky)
-                    delete nxt;
-                left->next = nxt;
+            if(bucket){
+                if(bucket->data.first == ky){
+                    auto nxt = bucket->next;
+                    delete bucket;
+                    bucket = nxt;
+                }
+                else{
+                    while(left->next){
+                        auto nxt = left->next->next;
+                        if(left->next->data.first == ky)
+                            delete left->next;
+                        left->next = nxt;
+                    }
+                }
             }
         }
 
@@ -258,9 +261,9 @@ public:
                 SizeType counter = 0;
                 for(SizeType i = 0; i < m_bucketSize; i++){
                     if(m_buckets[i]){
-                        imbue_data(m_buckets[i]->data.first, m_buckets[i]->data.second, data, sz, counter);
+                        imbue_data(m_buckets[i]->data.first, std::move(m_buckets[i]->data.second), data, sz, counter);
                         for(auto link = m_buckets[i]->next; link; link = link->next)
-                            imbue_data(m_buckets[i]->data.first, m_buckets[i]->data.second, data, counter);
+                            imbue_data(m_buckets[i]->data.first, std::move(m_buckets[i]->data.second), data, counter);
                         delete m_buckets[i];
                     }
                 }
@@ -313,11 +316,12 @@ public:
             SFAllocator<HashNode**>::deallocate(m_buckets);
         }
 
-        inline HashNode* imbue_data(const Key& ky, Value& val, HashNode** mem, SizeType memSize){
-            return imbue_data(ky, val, mem, memSize, m_nodeSize);
+        inline std::pair<iterator, bool> imbue_data(const Key& ky, Value&& val, HashNode** mem, SizeType memSize){
+            return imbue_data(ky, std::move(val), mem, memSize, m_nodeSize);
         }
 
-        inline HashNode* imbue_data(const Key& ky, Value& val, HashNode** mem, SizeType memSize, SizeType& counter){
+        inline std::pair<iterator, bool>
+        imbue_data(const Key& ky, Value&& val, HashNode** mem, SizeType memSize, SizeType& counter){
             auto index = hash(ky, memSize);
             HashNode*& node = mem[index];
             //cout << "Node is " << node << "\t\tHashed index to be: " << index << endl;
@@ -325,18 +329,18 @@ public:
                 HashNode* link = node;
                 if(node->data.first == ky){
                     //cout << " Didn't add " << ky << " : " << val << " primary node at pos: " << hash(ky, memSize) << endl;
-                    return node;
+                    return {{this, node, index}, false };
                 }
                 else{
                     for(link = node; link->next; link = link->next)
                         if(link->data.first == ky)
-                            return link;
+                            return {{this, link, index}, false};
                 }
                 //cout << "\t\tAND LINK.Key is: " << link->key << endl;
                 link->next = new HashNode{ {ky, std::move(val)}, nullptr };
                 ++counter;
                 //cout << "added " << ky << " : " << val << " secondary node at pos: " << hash(ky, memSize) << endl;
-                return link->next;
+                return {{this, link->next, index}, true};
             }
             node = new HashNode{ {ky, std::move(val)}, nullptr };
             //cout << "NODE ADDED KEY: key=" << ky << "     node->key=" << node->data.first << endl;
@@ -344,7 +348,7 @@ public:
             //node = new HashNode{ ky, std::move(val), nullptr };
             ++counter;
             //cout << " added " << ky << " : " << val << " primary node at pos: " << hash(ky, memSize) << "  addr: " << node << endl;
-            return node;
+            return {{this, node, index}, true};
         }
 
         inline iterator FORCE_INLINE getNode(const Key& ky) {

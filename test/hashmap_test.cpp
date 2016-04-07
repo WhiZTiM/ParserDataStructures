@@ -95,5 +95,34 @@ TEST_CASE( "HashMaps should work", "[hash_map]" ) {
         REQUIRE( mp.find("Vaha") == mp.end() );
 
     }
+    SECTION( "Return value of insert works "){
+        auto x = mp.insert(std::make_pair(Str("lol"), 6541));   // "lol" is a new key
+        auto y = mp.insert(std::make_pair(Str("loki"), 65414)); // "loki was already inserted earlier
+
+        REQUIRE( x.first == mp.find("lol") );
+        REQUIRE( x.second == true );
+
+        REQUIRE( y.first == mp.find("loki") );
+        REQUIRE( y.second == false );
+
+        REQUIRE( x.first != y.first );
+    }
+    SECTION( "operator[] should have the same semantics as std::unordered_map "){
+        mp["lol"] = 87;
+        auto x = mp.insert(std::make_pair(Str("lol"), 65414));
+        REQUIRE( x.first == mp.find("lol") );   // iterators are the same
+        REQUIRE( x.second == false );           // it did not insert
+        REQUIRE( (*x.first).second == 87 );              // value is the same
+
+        REQUIRE( mp.find("loki") != mp.end() );                 // "loki" exists
+        auto loki_value = (*mp.find("loki")).second;            // get its value;
+        REQUIRE( loki_value != 99 );                             // not same as the new value we gonna put
+
+        //try reassign "loki"
+        mp["loki"] = 99;
+        auto new_value = (*mp.find("loki")).second;
+        REQUIRE( new_value != loki_value );
+        REQUIRE( new_value == 99 );
+    }
 
 }
