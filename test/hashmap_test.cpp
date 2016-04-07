@@ -29,6 +29,8 @@ TEST_CASE( "HashMaps should work", "[hash_map]" ) {
 
     HashMap<FString, int> mp;
 
+    REQUIRE( mp.size() == 0 );
+
     mp.insert(std::pair<Str, int>("Haha", 23));
     mp.insert(std::pair<Str, int>("Huhu", 283));
     mp.insert(std::pair<Str, int>("Yaha", 5234));
@@ -37,6 +39,9 @@ TEST_CASE( "HashMaps should work", "[hash_map]" ) {
     mp.insert(std::pair<Str, int>("Vaha", -9993));
     mp.insert(std::pair<Str, int>("loki", -1113));
 
+    const SizeType mpSize = 7;
+
+    REQUIRE( mp.size() == mpSize );
     //cout << "\n\n\t\tNOWWW\n\n";
     //for(auto x : mp)
     //    cout << "[" << x.first << ": " << x.second << ']' << endl;
@@ -89,10 +94,12 @@ TEST_CASE( "HashMaps should work", "[hash_map]" ) {
         mp.erase(x);
         auto y = mp.find("Haha");
         REQUIRE( y == mp.end() );
+        REQUIRE( mp.size() == mpSize - 1 );
 
         REQUIRE( mp.find("Vaha") != mp.end() );
         mp.erase("Vaha");
         REQUIRE( mp.find("Vaha") == mp.end() );
+        REQUIRE( mp.size() == mpSize - 2 );
 
     }
     SECTION( "Return value of insert works "){
@@ -101,6 +108,7 @@ TEST_CASE( "HashMaps should work", "[hash_map]" ) {
 
         REQUIRE( x.first == mp.find("lol") );
         REQUIRE( x.second == true );
+        REQUIRE( mp.size() == mpSize + 1 );
 
         REQUIRE( y.first == mp.find("loki") );
         REQUIRE( y.second == false );
@@ -109,10 +117,14 @@ TEST_CASE( "HashMaps should work", "[hash_map]" ) {
     }
     SECTION( "operator[] should have the same semantics as std::unordered_map "){
         mp["lol"] = 87;
-        auto x = mp.insert(std::make_pair(Str("lol"), 65414));
+        REQUIRE( mp.size() == mpSize + 1 );
+
+        //auto x = mp.insert(std::make_pair(Str("lol"), 65414));
+        auto x = mp.emplace("lol", 65414);
         REQUIRE( x.first == mp.find("lol") );   // iterators are the same
         REQUIRE( x.second == false );           // it did not insert
-        REQUIRE( (*x.first).second == 87 );              // value is the same
+        REQUIRE( (*x.first).second == 87 );     // value is the same
+        REQUIRE( mp.size() == mpSize + 1 );
 
         REQUIRE( mp.find("loki") != mp.end() );                 // "loki" exists
         auto loki_value = (*mp.find("loki")).second;            // get its value;
@@ -123,6 +135,7 @@ TEST_CASE( "HashMaps should work", "[hash_map]" ) {
         auto new_value = (*mp.find("loki")).second;
         REQUIRE( new_value != loki_value );
         REQUIRE( new_value == 99 );
+        REQUIRE( mp.size() == mpSize + 1 );
     }
 
 }

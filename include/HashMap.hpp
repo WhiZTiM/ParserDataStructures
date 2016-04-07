@@ -195,7 +195,17 @@ public:
         }
 
         inline SizeType FORCE_INLINE size() const {
-            return m_nodeSize();
+            return m_nodeSize;
+        }
+
+        template<typename... Args>
+        std::pair<iterator, bool> emplace(const Key& ky, Args... args){
+            return insert( std::pair<Key, Value>(
+                               std::piecewise_construct,
+                               std::tuple<Key>{ky},
+                               std::tuple<Args...>{ std::forward<Args>(args)... }
+                               )
+                           );
         }
 
         std::pair<iterator, bool> insert(std::pair<const Key, Value>&& kv){
@@ -219,30 +229,37 @@ public:
             return const_cast<HashMap*>(this)->getNode(ky);
         }
 
-        void erase(const const_iterator& iter){
-            erase(iter.currentNode->data.first);
+        SizeType erase(const const_iterator& iter){
+            return erase(iter.currentNode->data.first);
         }
 
-        void erase(const Key& ky){
+        SizeType erase(const Key& ky){
             auto index = hash(ky, m_bucketSize);
             auto& bucket = m_buckets[index];
             auto left = bucket;
+            SizeType rtn = 0;
 
             if(bucket){
                 if(bucket->data.first == ky){
                     auto nxt = bucket->next;
                     delete bucket;
+                    --m_nodeSize;
+                    ++rtn;
                     bucket = nxt;
                 }
                 else{
-                    while(left->next){
+                    while(left->next && rtn==0){
                         auto nxt = left->next->next;
-                        if(left->next->data.first == ky)
+                        if(left->next->data.first == ky){
                             delete left->next;
+                            --m_nodeSize;
+                            ++rtn;
+                        }
                         left->next = nxt;
                     }
                 }
             }
+            return rtn;
         }
 
         inline void reserve(SizeType sz){
