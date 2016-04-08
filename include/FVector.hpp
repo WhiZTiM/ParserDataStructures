@@ -192,9 +192,9 @@ private:
         {
             template<typename U>
             using Qualified = std::conditional_t<isConst, std::add_const_t<U>, U>;
-            //using base = typename std::iterator<std::bidirectional_iterator_tag, T>;
+            //using difference_type = typename std::iterator<std::bidirectional_iterator_tag, T>::difference_type;
 
-            iterator(T* data) : ptr(data){}
+            explicit iterator(T* data) : ptr(data){}
         public:
             iterator() = default;
             iterator(const iterator&) = default;
@@ -203,9 +203,9 @@ private:
             Qualified<T>* operator -> () const { return ptr; }
             Qualified<T>& operator * () const { return *ptr; }
             Qualified<iterator>& operator ++ () const { ++ptr; return *const_cast<iterator*>(this); }
-            Qualified<iterator>& operator ++ (int) const { iterator t(*this); ++ptr; return t; }
+            Qualified<iterator> operator ++ (int) const { iterator t(*this); ++ptr; return t; }
             Qualified<iterator>& operator -- () const { --ptr; return *const_cast<iterator*>(this); }
-            Qualified<iterator>& operator -- (int) const { iterator t(*this); --ptr; return t; }
+            Qualified<iterator> operator -- (int) const { iterator t(*this); --ptr; return t; }
             Qualified<iterator>& operator += (SizeType idx) const { ptr +=idx; return *const_cast<iterator*>(this); }
             Qualified<iterator>& operator -= (SizeType idx) const { ptr -=idx; return *const_cast<iterator*>(this); }
             Qualified<iterator> operator + (SizeType idx) const { return iterator(ptr + idx); }

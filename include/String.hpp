@@ -189,9 +189,9 @@ class Basic_fstring
                 Qualified<Char>* operator -> () const { return ptr; }
                 Qualified<Char>& operator * () const { return *ptr; }
                 Qualified<iterator>& operator ++ () const { ++ptr; return *const_cast<iterator*>(this); }
-                Qualified<iterator>& operator ++ (int) const { iterator t(*this); ++ptr; return t; }
+                Qualified<iterator> operator ++ (int) const { iterator t(*this); ++ptr; return t; }
                 Qualified<iterator>& operator -- () const { --ptr; return *const_cast<iterator*>(this); }
-                Qualified<iterator>& operator -- (int) const { iterator t(*this); --ptr; return t; }
+                Qualified<iterator> operator -- (int) const { iterator t(*this); --ptr; return t; }
                 Qualified<iterator>& operator += (SizeType idx) const { ptr +=idx; return *const_cast<iterator*>(this); }
                 Qualified<iterator>& operator -= (SizeType idx) const { ptr -=idx; return *const_cast<iterator*>(this); }
                 Qualified<iterator> operator + (SizeType idx) const { return iterator(ptr + idx); }
