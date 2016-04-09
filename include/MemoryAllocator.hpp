@@ -15,6 +15,7 @@
  */
 template<typename T, unsigned short BlockSize = 16>
 class PoolAllocator{
+public:
     struct MemoryBlock;
 
 public:
@@ -26,17 +27,17 @@ public:
     }
 
     T* allocate(){
-        auto& bk = freeblocks[lastFreeIndex];
+        auto& bk = freeblocks.back();
         T* ptr = bk.try_allocate();
         if(ptr)
             return ptr;
         //else its full, remove it and add new pool;
         usedblocks.emplace_back(std::move(bk));
-        freeblocks.erase( freeblocks.begin() + lastFreeIndex);
+        freeblocks.pop_back();
 
         if(freeblocks.size() < 1)       //Add new Block
             freeblocks.emplace_back();
-        return freeblocks[lastFreeIndex].try_allocate();
+        return freeblocks.back().try_allocate();
     }
 
     void deallocate(T* ptr){
@@ -54,12 +55,12 @@ public:
                 iter2->deallocate(ptr);
                 freeblocks.emplace_back(std::move(*iter2));
                 usedblocks.erase(iter2);
-                return;
             }
         }
     }
 
 private:
+public:
 
 
     struct MemoryBlock{
@@ -70,6 +71,8 @@ private:
         MemoryBlock() {
             std::memset(allocatedBlocks, false, sizeof(bool)*BlockSize);
             data = static_cast<T*>( ::operator new ( sizeof(T) * BlockSize ) );
+            assert((reinterpret_cast<std::uintptr_t>(data) % alignof(T) == 0) &&
+                   " Allocator failed to get a suitably aligned memory!" );
         }
         MemoryBlock(MemoryBlock&& other){
             data = other.data;
@@ -106,18 +109,19 @@ private:
             return nullptr;
         }
         inline void deallocate(T* ptr){
-            allocatedBlocks[(data - ptr)];
+            allocatedBlocks[ptr - data] = false;
         }
 
         bool contains(T* ptr) const {
             // see ... http://stackoverflow.com/a/3692961/1621391
-            assert( ((data - ptr) % sizeof(T) == 0) && " ptr is not suitably aligned!" );
+            assert( (reinterpret_cast<std::uintptr_t>(ptr) % alignof(T) == 0) &&
+                    " ptr is not suitably aligned!" );
             return (data <= ptr && ptr < (data + BlockSize) ) ;
         }
     };
-    std::size_t lastFreeIndex = 0;
+
     Container freeblocks;
-    Container usedblocks;
+    std::deque<MemoryBlock> usedblocks;
 };
 
 
