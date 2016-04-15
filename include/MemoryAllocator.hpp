@@ -1,13 +1,27 @@
+/*
+* ParserDataStructures
+*
+* Distributed under the Boost Software License, Version 1.0.
+* (See accompanying file LICENSE_1_0.txt or copy at
+* http://www.boost.org/LICENSE_1_0.txt)
+*
+* Author: Ibrahim Timothy Onogu
+* Email: ionogu@acm.org
+* Project Date: March, 2016
+*/
+
 #ifndef MEMORYALLOCATOR_HPP
 #define MEMORYALLOCATOR_HPP
 
 #include <new>
 #include <deque>
 #include <vector>
-#include <cassert>
 #include <cstring>
-#include <algorithm>
+#include <cassert>
 #include <iostream>
+#include <algorithm>
+#include <Config.hpp>
+#include <type_traits>
 
 /*!
  *
@@ -15,6 +29,17 @@
  */
 template<typename T, unsigned short BlockSize = 16>
 class PoolAllocator{
+
+    template<typename U> inline
+    std::enable_if_t<std::is_class<U>::value, void>
+    FORCE_INLINE call_destructor(U* t){
+        t->~U();
+    }
+
+    template<typename U> inline
+    std::enable_if_t<!std::is_class<U>::value, void>
+    FORCE_INLINE call_destructor(U*){}
+
 public:
     struct MemoryBlock;
 
@@ -24,6 +49,18 @@ public:
 
     PoolAllocator(){
         freeblocks.emplace_back();
+    }
+
+    template<typename... Args>
+    T* construct(Args... args){
+        T* t = allocate();
+        new (t) T(std::forward<Args>(args)...);
+        return t;
+    }
+
+    void destruct_and_deallocate(T* t, bool compressMemory = false){
+        call_destructor(t);
+        deallocate(t, compressMemory);
     }
 
     T* allocate(){
@@ -40,13 +77,17 @@ public:
         return freeblocks.back().try_allocate();
     }
 
-    void deallocate(T* ptr){
+    void deallocate(T* ptr, bool compressMemory = false){
         //Check freeblocks first, higher chances user will deallocate soon
         auto iter1 = std::find_if(freeblocks.begin(), freeblocks.end(),
                                  [ptr](const MemoryBlock& c){ return c.contains(ptr); } );
 
-        if(iter1 != freeblocks.end())
+        if(iter1 != freeblocks.end()){
             iter1->deallocate(ptr);
+            if(compressMemory && iter1->is_empty() ){
+                freeblocks.erase(iter1);
+            }
+        }
         else{
             auto iter2 = std::find_if(usedblocks.begin(), usedblocks.end(),
                                       [ptr](const MemoryBlock& c){ return c.contains(ptr); } );
@@ -59,7 +100,6 @@ public:
         }
     }
 
-private:
 public:
 
 
@@ -97,14 +137,20 @@ public:
         inline bool is_full() const {
             // Fastest way I know to test for truth in a boolean array
             return  (allocatedBlocks[0] == true) &&
-                    (std::memcmp(allocatedBlocks, allocatedBlocks+1, sizeof(bool)*(BlockSize - 1)));
+                    (0 == std::memcmp(allocatedBlocks, allocatedBlocks+1, sizeof(bool)*(BlockSize - 1)));
+        }
+
+        inline bool is_empty() const {
+            // Fastest way I know to test for falsehood in a boolean array
+            return  (allocatedBlocks[0] == false) &&
+                    (0 == std::memcmp(allocatedBlocks, allocatedBlocks+1, sizeof(bool)*(BlockSize - 1)));
         }
 
         T* try_allocate() {
             for(unsigned short i=0; i < BlockSize; i++)
                 // This relies on && short circuiting properties. see ISO C++14 ($5.14.1)
                 // if a block isn't marked allocated, it marks it and returns the block
-                if((!allocatedBlocks[i]) && (allocatedBlocks[i] = true))
+                if(!(allocatedBlocks[i]) && (allocatedBlocks[i] = true))
                     return data + i;
             return nullptr;
         }
@@ -120,8 +166,11 @@ public:
         }
     };
 
+private:
+
     Container freeblocks;
     std::deque<MemoryBlock> usedblocks;
+
 };
 
 
