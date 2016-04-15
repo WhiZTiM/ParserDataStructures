@@ -115,7 +115,7 @@ public:
         }
         unsigned idx = 0;
         for(auto it = std::begin(ls); it != std::end(ls); ++it)
-            new(m_data + m_size + idx++) T(*it);
+            new(m_data + m_size + idx++) T(std::move(*it));
         m_size += idx;
     }
 
