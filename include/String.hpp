@@ -27,15 +27,15 @@ class Basic_fstring
 
         template<SizeType N>
         Basic_fstring(const Char (&data)[N]){
-            construct_from(data, N);
+            copy_construct_from(data, N);
         }
 
         Basic_fstring(const std::basic_string<Char>& str){
-            construct_from(str.c_str(), str.size()+1);
+            copy_construct_from(str.c_str(), str.size()+1);
         }
 
         Basic_fstring(Char* ch){
-            construct_from(ch, strlen(ch)+1);
+            copy_construct_from(ch, strlen(ch)+1);
         }
 
         FORCE_INLINE ~Basic_fstring() { destroy(); }
@@ -157,7 +157,7 @@ class Basic_fstring
             }
         }
 
-        inline FORCE_INLINE void construct_from(const Char* ch, SizeType sz){
+        inline FORCE_INLINE void copy_construct_from(const Char* ch, SizeType sz){
             m_size = sz - 1;
             if(sz < kSS)
                 std::memcpy(&m_data.local, ch, sizeof(Char)*sz);
@@ -192,10 +192,10 @@ class Basic_fstring
                 Qualified<iterator> operator ++ (int) const { iterator t(*this); ++ptr; return t; }
                 Qualified<iterator>& operator -- () const { --ptr; return *const_cast<iterator*>(this); }
                 Qualified<iterator> operator -- (int) const { iterator t(*this); --ptr; return t; }
-                Qualified<iterator>& operator += (SizeType idx) const { ptr +=idx; return *const_cast<iterator*>(this); }
-                Qualified<iterator>& operator -= (SizeType idx) const { ptr -=idx; return *const_cast<iterator*>(this); }
-                Qualified<iterator> operator + (SizeType idx) const { return iterator(ptr + idx); }
-                Qualified<iterator> operator - (SizeType idx) const { return iterator(ptr - idx); }
+                Qualified<iterator>& operator += (int idx) const { ptr +=idx; return *const_cast<iterator*>(this); }
+                Qualified<iterator>& operator -= (int idx) const { ptr -=idx; return *const_cast<iterator*>(this); }
+                Qualified<iterator> operator + (int idx) const { return iterator(ptr + idx); }
+                Qualified<iterator> operator - (int idx) const { return iterator(ptr - idx); }
                 Qualified<Char>& operator [] (std::ptrdiff_t idx) const { return *(ptr + idx); }
                 std::ptrdiff_t operator - (const iterator& other) const { return (ptr - other.ptr); }
 

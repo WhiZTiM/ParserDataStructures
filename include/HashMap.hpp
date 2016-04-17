@@ -108,7 +108,7 @@ class HashMap
         ~Iterator(){}
         Iterator(const Iterator& other) = default;
         Iterator& operator = (const Iterator& other) = default;
-        operator Iterator<true> () { return Iterator<true>{hashMap, currentNode, idx}; }
+        operator Iterator<true> () const { return Iterator<true>{hashMap, currentNode, idx}; }
 
         Qualified<value_type>& operator* () const {
             return currentNode->data;

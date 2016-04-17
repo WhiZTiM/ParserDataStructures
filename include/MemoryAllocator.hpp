@@ -85,7 +85,9 @@ public:
         if(iter1 != freeblocks.end()){
             iter1->deallocate(ptr);
             if(compressMemory && iter1->is_empty() ){
-                freeblocks.erase(iter1);
+                auto iter_e = std::prev(freeblocks.end());
+                std::iter_swap(iter1, iter_e);
+                freeblocks.pop_back();
             }
         }
         else{
@@ -120,6 +122,7 @@ public:
             std::memcpy(allocatedBlocks, other.allocatedBlocks, sizeof(bool)*BlockSize);
         }
         MemoryBlock& operator = (MemoryBlock&& other){
+            assert((this != &other) && " Self assignment isn't permitted!!!!" );
             ::operator delete (data);
             data = other.data;
             other.data = nullptr;
@@ -132,6 +135,16 @@ public:
 
         ~MemoryBlock(){
             ::operator delete (data);
+        }
+
+        void swap(MemoryBlock& other){
+            using std::swap;
+            swap(data, other.data);
+            swap(allocatedBlocks, other.allocatedBlocks);
+        }
+
+        friend void swap(MemoryBlock& lhs, MemoryBlock& rhs){
+            lhs.swap(rhs);
         }
 
         inline bool is_full() const {
