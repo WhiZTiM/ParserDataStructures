@@ -150,4 +150,67 @@ TEST_CASE( "list initialization of vectors", "[vector]" ) {
         auto q2 = std::accumulate(x.cbegin(), x.cend(), 500);
         REQUIRE( q1 == q2);
     }
+
+}
+
+TEST_CASE( "erasing elements works", "[vector]" ) {
+
+    FVector<int> v{ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13 };
+
+    REQUIRE( v.size() == 13 );
+    REQUIRE( v.capacity() >= 13 );
+
+    SECTION( "erasing a single element at the begining" ) {
+        REQUIRE( v.size() == 13 );
+        std::vector<int> x(v.begin(), v.end());
+        REQUIRE( x.size() == 13 );
+
+        v.erase(v.begin());
+        x.erase(x.begin());
+
+        REQUIRE( x.size() == 12 );
+        REQUIRE( v.size() == 12 );
+        REQUIRE( v.capacity() >= 13 );
+    }
+    SECTION( "erasing a single element at the end" ) {
+
+        REQUIRE( v.size() == 13 );
+        std::vector<int> x(v.begin(), std::prev(v.end()));
+        REQUIRE( x.size() == 12 );
+
+        v.erase(std::prev(v.end()));
+
+        REQUIRE( v.size() == 12 );
+        REQUIRE( std::equal(std::begin(x), std::end(x), std::begin(v), std::end(v)) );
+    }
+    SECTION( "erasing a single element at the middle" ) {
+
+        std::vector<int> x(v.begin(), v.end());
+        REQUIRE( x.size() == 13 );
+
+        v.erase(v.begin() + 4);
+        x.erase(x.begin() + 4);
+
+        v.erase(v.end() - 3);
+        x.erase(x.end() - 3);
+
+        REQUIRE( v.size() == 11 );
+        REQUIRE( std::equal(std::begin(x), std::end(x), std::begin(v), std::end(v)) );
+    }
+    SECTION( "erasing a range works" ) {
+
+        std::vector<int> x(v.begin(), v.end());
+        REQUIRE( x.size() == 13 );
+
+        auto vx1 = std::find(v.begin(), v.end(), 5);
+        auto vx2 = std::find(v.begin(), v.end(), 10);
+        auto xx1 = std::find(x.begin(), x.end(), 5);
+        auto xx2 = std::find(x.begin(), x.end(), 10);
+        v.erase(vx1, vx2);
+        x.erase(xx1, xx2);
+
+        REQUIRE( v.size() == 8 );
+        REQUIRE( x.size() == 8 );
+        REQUIRE( std::equal(std::begin(x), std::end(x), std::begin(v), std::end(v)) );
+    }
 }

@@ -22,6 +22,58 @@ using SizeType = uint32_t;
 template<typename T>
 class FVector{
 
+    struct detail {
+        template<bool isConst>
+        class iterator : public std::iterator<std::random_access_iterator_tag, T>
+        {
+            template<typename U>
+            using Qualified = std::conditional_t<isConst, std::add_const_t<U>, U>;
+            //using difference_type = typename std::iterator<std::bidirectional_iterator_tag, T>::difference_type;
+
+            explicit iterator(T* data) : ptr(data){}
+        public:
+            iterator() = default;
+            iterator(const iterator&) = default;
+            iterator& operator = (const iterator&) = default;
+
+            operator iterator<true> () const { return iterator<true>(ptr); }
+
+            Qualified<T>* operator -> () const { return ptr; }
+            Qualified<T>& operator * () const { return *ptr; }
+            Qualified<iterator>& operator ++ () const { ++ptr; return *const_cast<iterator*>(this); }
+            Qualified<iterator> operator ++ (int) const { iterator t(*this); ++ptr; return t; }
+            Qualified<iterator>& operator -- () const { --ptr; return *const_cast<iterator*>(this); }
+            Qualified<iterator> operator -- (int) const { iterator t(*this); --ptr; return t; }
+            Qualified<iterator>& operator += (int idx) const { ptr +=idx; return *const_cast<iterator*>(this); }
+            Qualified<iterator>& operator -= (int idx) const { ptr -=idx; return *const_cast<iterator*>(this); }
+            Qualified<iterator> operator + (int idx) const { return iterator(ptr + idx); }
+            Qualified<iterator> operator - (int idx) const { return iterator(ptr - idx); }
+            Qualified<T>& operator [] (std::ptrdiff_t idx) const { return *(ptr + idx); }
+            std::ptrdiff_t operator - (const iterator& other) const { return (ptr - other.ptr); }
+
+            friend bool operator == (const iterator& lhs, const iterator& rhs){ return lhs.ptr == rhs.ptr; }
+            friend bool operator != (const iterator& lhs, const iterator& rhs){ return!(lhs.ptr == rhs.ptr); }
+            friend bool operator <  (const iterator& lhs, const iterator& rhs){ return (rhs.ptr - lhs.ptr) > 0; }
+        private:
+            friend class FVector<T>;
+            mutable T* ptr = nullptr;
+        };
+    };
+
+public:
+    using iterator = typename detail::template iterator<false>;
+    using const_iterator = typename detail::template iterator<true>;
+    //using const_iterator = detail::iterator<true>;
+
+    iterator begin() {return iterator(m_data); }
+    const_iterator begin() const {return const_iterator(m_data); }
+    const_iterator cbegin() const {return const_iterator(m_data); }
+
+    iterator end() {return iterator(m_data+m_size); }
+    const_iterator end() const {return const_iterator(m_data+m_size); }
+    const_iterator cend() const {return const_iterator(m_data+m_size); }
+
+
 public:
 
     using value_type = T;
@@ -97,6 +149,35 @@ public:
         --m_size;
     }
 
+    iterator erase(const_iterator pos){
+        auto itr = cend();
+        auto ptrx = std::prev(itr);
+        auto itrx = erase(pos, pos + 1);
+        auto itr2 = ptrx;
+        itr = pos + 3;
+        (void) itr; (void) itr2;
+        return itrx;
+    }
+
+    iterator erase(const_iterator first, const_iterator last){
+        int S = first - cbegin();
+        int L = last - cbegin();
+        int diff = L - S;
+        if(diff <= 0 || int(m_size) - diff <= 0)
+            return end();
+
+        for(int i = S; i < L; i++){
+            call_destructor(m_data[i]);
+        }
+        for(int i = S; unsigned(i + diff) < m_size; i++){
+            new (m_data+i) T(std::move(m_data[i + diff]));
+            call_destructor(m_data[i + diff]);
+        }
+        m_size -= diff;
+        auto kpx = m_data + (L - 1);
+        return iterator(kpx);
+    }
+
     template<typename... Args>
     void emplace_back(Args&&... arg){
         if(m_size >= m_capacity)
@@ -157,6 +238,10 @@ public:
         swap(m_capacity, other.m_capacity);
     }
 
+    friend void swap(FVector& lhs, FVector& rhs){   //for ADL
+        lhs.swap(rhs);
+    }
+
     inline void FORCE_INLINE move_from(FVector&& other){
         clear();
         swap(other);
@@ -185,56 +270,6 @@ private:
     FORCE_INLINE call_destructor(U&){}
 
     void inline FORCE_INLINE grow_capacity() { reserve((m_capacity+1) * 2); }
-
-    struct detail {
-        template<bool isConst>
-        class iterator : public std::iterator<std::random_access_iterator_tag, T>
-        {
-            template<typename U>
-            using Qualified = std::conditional_t<isConst, std::add_const_t<U>, U>;
-            //using difference_type = typename std::iterator<std::bidirectional_iterator_tag, T>::difference_type;
-
-            explicit iterator(T* data) : ptr(data){}
-        public:
-            iterator() = default;
-            iterator(const iterator&) = default;
-            iterator& operator = (const iterator&) = default;
-
-            Qualified<T>* operator -> () const { return ptr; }
-            Qualified<T>& operator * () const { return *ptr; }
-            Qualified<iterator>& operator ++ () const { ++ptr; return *const_cast<iterator*>(this); }
-            Qualified<iterator> operator ++ (int) const { iterator t(*this); ++ptr; return t; }
-            Qualified<iterator>& operator -- () const { --ptr; return *const_cast<iterator*>(this); }
-            Qualified<iterator> operator -- (int) const { iterator t(*this); --ptr; return t; }
-            Qualified<iterator>& operator += (SizeType idx) const { ptr +=idx; return *const_cast<iterator*>(this); }
-            Qualified<iterator>& operator -= (SizeType idx) const { ptr -=idx; return *const_cast<iterator*>(this); }
-            Qualified<iterator> operator + (SizeType idx) const { return iterator(ptr + idx); }
-            Qualified<iterator> operator - (SizeType idx) const { return iterator(ptr - idx); }
-            Qualified<T>& operator [] (std::ptrdiff_t idx) const { return *(ptr + idx); }
-            std::ptrdiff_t operator - (const iterator& other) const { return (ptr - other.ptr); }
-
-            friend bool operator == (const iterator& lhs, const iterator& rhs){ return lhs.ptr == rhs.ptr; }
-            friend bool operator != (const iterator& lhs, const iterator& rhs){ return!(lhs.ptr == rhs.ptr); }
-            friend bool operator <  (const iterator& lhs, const iterator& rhs){ return (rhs.ptr - lhs.ptr) > 0; }
-        private:
-            friend class FVector<T>;
-            mutable T* ptr = nullptr;
-        };
-    };
-
-public:
-    using iterator = typename detail::template iterator<false>;
-    using const_iterator = typename detail::template iterator<true>;
-    //using const_iterator = detail::iterator<true>;
-
-    iterator begin() {return iterator(m_data); }
-    const_iterator begin() const {return const_iterator(m_data); }
-    const_iterator cbegin() const {return const_iterator(m_data); }
-
-    iterator end() {return iterator(m_data+m_size); }
-    const_iterator end() const {return const_iterator(m_data+m_size); }
-    const_iterator cend() const {return const_iterator(m_data+m_size); }
-
 };
 
 template<typename T>
