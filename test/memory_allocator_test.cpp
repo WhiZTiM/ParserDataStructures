@@ -19,9 +19,9 @@ private:
 };
 
 TEST_CASE( "Memory Allocator", "[memory]" ){
-    PoolAllocator<int> mem_int;
-    PoolAllocator<CX> mem_string;
-    PoolAllocator<std::deque<CX>> mem_d;
+    ElasticPoolAllocator<int> mem_int;
+    ElasticPoolAllocator<CX> mem_string;
+    ElasticPoolAllocator<std::deque<CX>> mem_d;
     std::vector<decltype(mem_int.allocate())> mem_int_ptrs;
     std::vector<decltype(mem_string.allocate())> mem_string_ptrs;
     std::vector<decltype(mem_d.allocate())> mem_d_ptrs;
@@ -39,12 +39,12 @@ TEST_CASE( "Memory Allocator", "[memory]" ){
     }
 
     for(auto& x : mem_int_ptrs)
-        mem_int.deallocate(x, true);
+        mem_int.deallocate(x);
     for(auto x : mem_string_ptrs)
-        mem_string.destruct_and_deallocate(x, true);
+        mem_string.destruct_and_deallocate(x);
 
     for(auto x : mem_d_ptrs)
-        mem_d.destruct_and_deallocate(x, true);
+        mem_d.destruct_and_deallocate(x);
 
     //REQUIRE(  )
 }

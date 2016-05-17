@@ -150,13 +150,7 @@ public:
     }
 
     iterator erase(const_iterator pos){
-        auto itr = cend();
-        auto ptrx = std::prev(itr);
-        auto itrx = erase(pos, pos + 1);
-        auto itr2 = ptrx;
-        itr = pos + 3;
-        (void) itr; (void) itr2;
-        return itrx;
+        return erase(pos, pos + 1);
     }
 
     iterator erase(const_iterator first, const_iterator last){

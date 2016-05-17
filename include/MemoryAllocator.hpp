@@ -20,8 +20,9 @@
 #include <cassert>
 #include <iostream>
 #include <algorithm>
-#include <Config.hpp>
+#include "Config.hpp"
 #include <type_traits>
+#include <forward_list>
 
 /*!
  *
@@ -52,7 +53,7 @@ public:
     }
 
     template<typename... Args>
-    T* construct(Args... args){
+    T* construct(Args&&... args){
         T* t = allocate();
         new (t) T(std::forward<Args>(args)...);
         return t;
@@ -185,6 +186,141 @@ private:
     std::deque<MemoryBlock> usedblocks;
 
 };
+
+
+//! TODO: Add alignment criteria
+
+
+template<typename T, SizeType BlockSize = 4096>
+class ElasticPoolAllocator{
+
+    template<typename U> inline
+    std::enable_if_t<std::is_class<U>::value, void>
+    FORCE_INLINE call_destructor(U* t){
+        t->~U();
+    }
+
+    template<typename U> inline
+    std::enable_if_t<!std::is_class<U>::value, void>
+    FORCE_INLINE call_destructor(U*){}
+
+    class MemoryBlock;
+
+public:
+
+    ElasticPoolAllocator(){
+        memblock = new MemoryBlock();
+    }
+
+    ~ElasticPoolAllocator(){
+        if(memblock->all_memory_has_been_deallocated())
+            delete memblock;
+    }
+
+    template<typename... Args>
+    T* construct(Args&&... args){
+        T* t = allocate();
+        new(t) T(std::forward<Args>(args)...);
+        return t;
+    }
+
+    void destruct_and_deallocate(T* t){
+        call_destructor(t);
+        deallocate(t);
+    }
+
+    T* allocate(){
+        auto mem = memblock->try_allocate();
+        if(mem == nullptr){
+            memblock = new MemoryBlock();   //leaks the old memblock (No worries, it will delete itself)
+            return memblock->try_allocate();
+        }
+        return mem;
+    }
+
+    void deallocate(T* ptr){
+        auto blk = MemoryBlock::deallocate(ptr);
+        if(blk->all_memory_has_been_deallocated() && blk->deleteSelf() && blk == memblock )
+            memblock = new MemoryBlock();
+    }
+
+private:
+
+    class MemoryBlock{
+        char* data;
+        char* currentIndex;
+        int allocationCount = 0;
+
+        static constexpr SizeType PSize = sizeof(char*);
+        static constexpr SizeType TSize = std::conditional_t<(sizeof(T) < alignof(T*)),
+                                std::integral_constant<int,alignof(T*)>,
+                                std::integral_constant<int,sizeof(T)>>::value;
+
+        static constexpr auto dataEnd = (TSize*BlockSize) + (sizeof(void*) * BlockSize);
+
+
+    public:
+
+        MemoryBlock() :
+            data(static_cast<char*>(::operator new((TSize*BlockSize) + (sizeof(void*) * BlockSize))))
+        {
+            currentIndex = data;
+            //std::cout << "Print nullptr: " << (void*)nullptr << " and 0:" << (void*)0 << std::endl;
+            //std::cout << "Sizeof(T): " << sizeof(T) << " bytes ...Aligned size: " << TSize << " bytes" << std::endl;
+            //std::cout << "Sizeof(char*)==Sizeof(this)==Sizeof(T*)== " << PSize << " bytes" << std::endl;
+            //std::cout << "Allocated data @: " << (void*)data << " of size: " << (TSize*BlockSize) + (sizeof(void*) * BlockSize) << std::endl;
+
+            //std::cout << std::endl << std::endl;
+
+            static_assert(sizeof(char*) == sizeof(this), "");
+            static_assert(sizeof(this) == PSize, "");
+        }
+
+        T* try_allocate(){
+            if(currentIndex == (data + dataEnd)){
+                return nullptr;
+            }
+            auto sz = sizeof(this);
+            auto this_ = this;
+            std::memcpy(reinterpret_cast<MemoryBlock*>(currentIndex), &this_, sz);
+
+            //std::cout << "Copied " << sz << "bytes of (this):" << this << " to data @" << (void*)currentIndex <<std::endl;
+            //std::cout << "CurrentIndex: " << (void*)currentIndex << std::endl;
+
+            char* rtn = currentIndex + PSize;
+            currentIndex += PSize + TSize;
+
+            //std::cout << "Increased Index by " << PSize + TSize << " bytes" << std::endl;
+            //std::cout << "Returned memory address: " << reinterpret_cast<T*>(rtn) << std::endl << std::endl;
+
+            ++allocationCount;
+            return reinterpret_cast<T*>(rtn);
+        }
+
+        bool all_memory_has_been_deallocated() const { return allocationCount == 0; }
+        bool deleteSelf(){ delete this; return true; }
+
+        ~MemoryBlock(){
+            ::operator delete(data);
+        }
+
+        static MemoryBlock* FORCE_INLINE deallocate(T* ptr){
+            MemoryBlock* blk = *reinterpret_cast<MemoryBlock**>(reinterpret_cast<char*>(ptr) - PSize);
+
+            //std::cout << "Was given: " << ptr << std::endl;
+            //std::cout << "Resolved MemoryBlock at: " << blk << std::endl;
+
+            --blk->allocationCount;
+                //std::cout << "DELETED MEMORY: " << blk << std::endl;
+            //std::cout << "currentIndex: " << (void*)blk->currentIndex << std::endl;
+            return blk;
+        }
+
+    };
+
+    MemoryBlock* memblock;
+};
+
 
 
 #endif // MEMORYALLOCATOR_HPP
