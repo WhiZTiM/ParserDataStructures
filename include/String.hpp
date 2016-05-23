@@ -30,12 +30,13 @@ class Basic_fstring
             copy_construct_from(data, N);
         }
 
-        Basic_fstring(const std::basic_string<Char>& str){
-            copy_construct_from(str.c_str(), str.size()+1);
+        template<typename T, std::enable_if_t<std::is_same<T, const Char*>::value>* = nullptr>
+        explicit Basic_fstring(const T ch){
+            copy_construct_from(ch, strlen(ch)+1);
         }
 
-        Basic_fstring(Char* ch){
-            copy_construct_from(ch, strlen(ch)+1);
+        Basic_fstring(const std::basic_string<Char>& str){
+            copy_construct_from(str.c_str(), str.size()+1);
         }
 
         FORCE_INLINE ~Basic_fstring() { destroy(); }

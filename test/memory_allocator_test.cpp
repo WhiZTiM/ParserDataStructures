@@ -33,9 +33,9 @@ TEST_CASE( "Memory Allocator", "[memory]" ){
     }
 
     for(unsigned i = 0; i < mem_int_ptrs.size(); i++){
-        std::cout << "int    _allocation " << i << ": " << mem_int_ptrs[i] << std::endl;
-        std::cout << "string _allocation " << i << ": " << mem_string_ptrs[i]->getD() << std::endl;
-        std::cout << "deque  _allocation " << i << ": " << mem_d_ptrs[i]->operator[](1).getD() << std::endl;
+        //std::cout << "int    _allocation " << i << ": " << mem_int_ptrs[i] << std::endl;
+        //std::cout << "string _allocation " << i << ": " << mem_string_ptrs[i]->getD() << std::endl;
+        //std::cout << "deque  _allocation " << i << ": " << mem_d_ptrs[i]->operator[](1).getD() << std::endl;
     }
 
     for(auto& x : mem_int_ptrs)

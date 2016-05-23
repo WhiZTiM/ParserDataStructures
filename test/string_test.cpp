@@ -13,6 +13,7 @@
 #include "catch.hpp"
 #include <vector>
 #include <algorithm>
+//#include <typeinfo>
 #include <string>
 #include "String.hpp"
 
@@ -204,6 +205,24 @@ TEST_CASE( "Test Construction and Assingment of Large Strings", "[string]" ) {
 
         //Name shadowing of str
         FString str = std::string("Hello World!");
+
+        REQUIRE(str.size() == 12);
+        REQUIRE(str[0] == 'H');     // First character
+        REQUIRE(str[11] == '!');    // Last  character
+        REQUIRE(str[12] == '\0');   // Null terminator
+
+        auto s = FString(std::string("Hello World!"));
+        REQUIRE(str == s);
+    }
+
+    SECTION( "Constructing from const char* ('Hello World!') should be 12 characters" ){
+
+        //Name shadowing of str
+        const char* ppx = "Hello World!";
+
+        //std::cout << typeid(ppx).name() << std::endl;
+
+        FString str(ppx);
 
         REQUIRE(str.size() == 12);
         REQUIRE(str[0] == 'H');     // First character
