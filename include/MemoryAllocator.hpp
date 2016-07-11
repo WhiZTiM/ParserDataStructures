@@ -247,9 +247,9 @@ public:
 private:
 
     class MemoryBlock{
-        char* data;
-        char* currentIndex;
         int allocationCount = 0;
+        char* currentIndex;
+        char* data;
 
         static constexpr SizeType PSize = sizeof(char*);
         static constexpr SizeType TSize = std::conditional_t<(sizeof(T) < alignof(T*)),

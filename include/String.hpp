@@ -243,6 +243,16 @@ bool operator != (Basic_fstring<Char> const& lhs, Basic_fstring<Char> const& rhs
     return !(lhs == rhs);
 }
 
+template<typename Char, SizeType N> inline FORCE_INLINE
+bool operator != (const Basic_fstring<Char>& lhs, const Char (&rhs)[N]){
+    return !(lhs == rhs);
+}
+
+template<typename Char, SizeType N> inline FORCE_INLINE
+bool operator != (const Char (&lhs)[N], const Basic_fstring<Char>& rhs){
+    return !(lhs == rhs);
+}
+
 template<typename Char> inline
 bool operator < (Basic_fstring<Char> const& lhs, Basic_fstring<Char> const& rhs){
     return Basic_fstring<Char>::compare(lhs, rhs) < 0;

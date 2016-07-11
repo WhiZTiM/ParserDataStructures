@@ -167,6 +167,7 @@ TEST_CASE( "Test Construction and Assingment of Large Strings", "[string]" ) {
         str[0] =  'Y';
         str[5] =  '^';
         str[11] = '$';
+
         str[str.size() - 1] = 'k';
 
         REQUIRE(str[0]  == 'Y');

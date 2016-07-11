@@ -214,3 +214,15 @@ TEST_CASE( "erasing elements works", "[vector]" ) {
         REQUIRE( std::equal(std::begin(x), std::end(x), std::begin(v), std::end(v)) );
     }
 }
+
+TEST_CASE( "Test reverse_iterator", "[vector]" ) {
+
+    FVector<int> v{ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13 };
+    std::vector<int> x(v.rbegin(), v.rend());
+
+    std::reverse(v.begin(), v.end());
+    REQUIRE( std::equal(std::begin(x), std::end(x), std::begin(v), std::end(v)) );
+
+    //Test incomplete
+
+}

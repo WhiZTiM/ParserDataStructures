@@ -198,6 +198,10 @@ public:
             return m_nodeSize;
         }
 
+        inline SizeType FORCE_INLINE capacity() const {
+            return m_bucketSize;
+        }
+
         template<typename... Args>
         std::pair<iterator, bool> emplace(const Key& ky, Args... args){
             return insert( std::pair<Key, Value>(
@@ -341,11 +345,9 @@ public:
         imbue_data(const Key& ky, Value&& val, HashNode** mem, SizeType memSize, SizeType& counter){
             auto index = hash(ky, memSize);
             HashNode*& node = mem[index];
-            //cout << "Node is " << node << "\t\tHashed index to be: " << index << endl;
             if(node){
                 HashNode* link = node;
                 if(node->data.first == ky){
-                    //cout << " Didn't add " << ky << " : " << val << " primary node at pos: " << hash(ky, memSize) << endl;
                     return {{this, node, index}, false };
                 }
                 else{
@@ -353,18 +355,12 @@ public:
                         if(link->data.first == ky)
                             return {{this, link, index}, false};
                 }
-                //cout << "\t\tAND LINK.Key is: " << link->key << endl;
                 link->next = new HashNode{ {ky, std::move(val)}, nullptr };
                 ++counter;
-                //cout << "added " << ky << " : " << val << " secondary node at pos: " << hash(ky, memSize) << endl;
                 return {{this, link->next, index}, true};
             }
             node = new HashNode{ {ky, std::move(val)}, nullptr };
-            //cout << "NODE ADDED KEY: key=" << ky << "     node->key=" << node->data.first << endl;
-            //delete node;
-            //node = new HashNode{ ky, std::move(val), nullptr };
             ++counter;
-            //cout << " added " << ky << " : " << val << " primary node at pos: " << hash(ky, memSize) << "  addr: " << node << endl;
             return {{this, node, index}, true};
         }
 
