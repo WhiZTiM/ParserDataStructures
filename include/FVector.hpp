@@ -135,6 +135,12 @@ public:
 public:
 
     using value_type = T;
+    using size_type = SizeType;
+    using pointer = value_type*;
+    using reference = value_type&;
+    using const_pointer = const value_type*;
+    using const_reference = const value_type&;
+    using difference_type = std::ptrdiff_t;
 
     struct reserve_tag_t{};
     static reserve_tag_t reserve_tag;
@@ -175,6 +181,10 @@ public:
         SFAllocator<T>::deallocate(m_data);
     }
 
+    inline bool FORCE_INLINE empty() const {
+        return m_size == 0;
+    }
+
     inline SizeType FORCE_INLINE size() const {
         return m_size;
     }
@@ -191,6 +201,16 @@ public:
         return m_data[idx];
     }
 
+    inline FORCE_INLINE T& at(SizeType idx) {
+        if(!(idx < m_size))
+            throw std::out_of_range("Invalid Range given");
+        return m_data[idx];
+    }
+
+    inline FORCE_INLINE T const& at(SizeType idx) const{
+        return const_cast<FVector*>(this)->at(idx);
+    }
+
     void push_back(const T& val){
         emplace_back(T(val));
     }
@@ -199,12 +219,21 @@ public:
         emplace_back(std::move(val));
     }
 
-    T& back(){ return m_data[m_size-1]; }
-    const T& back() const { return m_data[m_size-1]; }
-
     void pop_back() {
         call_destructor(m_data[m_size - 1]);
         --m_size;
+    }
+
+    T& back(){ return m_data[m_size-1]; }
+    const T& back() const { return m_data[m_size-1]; }
+
+    T& front(){ return m_data[0]; }
+    const T& front() const { return m_data[0]; }
+
+    void clear() noexcept {
+        for(SizeType i=0; i<m_size; i++)
+            call_destructor(m_data[i]);
+        m_size = 0;
     }
 
     iterator erase(const_iterator pos){
@@ -233,9 +262,8 @@ public:
     template<typename... Args>
     void emplace_back(Args&&... arg){
         if(m_size >= m_capacity)
-            //reserve((m_size+1) * 2);
-            grow_capacity();
-        new(m_data+m_size) T(std::forward<T>(arg)...);
+            grow_capacity();    //should be same as calling reserve((m_size+1) * 2);
+        new(m_data+m_size) T(std::forward<Args&&>(arg)...);
         m_size += 1;
     }
 
@@ -251,6 +279,18 @@ public:
             new(m_data + m_size + idx++) T(std::move(*it));
         m_size += idx;
     }
+
+    void swap(FVector& other){
+        using std::swap;
+        swap(m_size, other.m_size);
+        swap(m_data, other.m_data);
+        swap(m_capacity, other.m_capacity);
+    }
+
+    friend void swap(FVector& lhs, FVector& rhs){   //for ADL
+        lhs.swap(rhs);
+    }
+
 
     template<typename... Arg>
     void resize(SizeType sz, Arg&&... arg){
@@ -277,21 +317,49 @@ public:
         }
     }
 
-    void clear() noexcept {
-        for(SizeType i=0; i<m_size; i++)
-            call_destructor(m_data[i]);
-        m_size = 0;
+    // Unlike C++'s STL, this is a binding request
+    void shrink_to_fit(){
+        if(m_size < m_capacity){
+            T* data = static_cast<T*>(SFAllocator<T>::allocate(m_size));
+            for(SizeType i=0; i < m_size; i++){
+                new(data+i) T(std::move(m_data[i]));       //! TODO: move if only noexcept;
+                call_destructor(m_data[i]);
+            }
+            SFAllocator<T>::deallocate(m_data);
+            m_capacity = m_size;
+            m_data = data;
+        }
     }
 
-    void swap(FVector& other){
-        using std::swap;
-        swap(m_size, other.m_size);
-        swap(m_data, other.m_data);
-        swap(m_capacity, other.m_capacity);
+    void assign(size_type count, const T& value){
+        reserve(count);
+        size_type i = 0, sc = std::min(count, m_size);
+        for(; i < sc; i++)
+            operator [](i) = value;
+        for(; i < count; i++)
+            new(m_data + i) T(value);
+        m_size = count;
     }
 
-    friend void swap(FVector& lhs, FVector& rhs){   //for ADL
-        lhs.swap(rhs);
+    void assign(std::initializer_list<T> ilist){
+        reserve(ilist.size());
+        size_type i = 0, sc = std::min(ilist.size(), std::size_t(m_size));
+        auto it = std::begin(ilist);
+        for(; it != std::end(ilist); ++it)
+            operator [](i++) = *it;
+        for(; it != std::end(ilist); ++it)
+            new(m_data + i++) T(*it);
+        m_size = ilist.size();
+    }
+
+    template< class InputIt >
+    void assign( InputIt first, InputIt last ){
+        size_type i = 0;
+        for(; (first != last) && (i < m_size); ++first, i++)
+            operator [](i) = *first;
+        for(; first != last; ++first, i++)
+            emplace_back(*first);
+        m_size = i;
     }
 
     inline void FORCE_INLINE move_from(FVector&& other){

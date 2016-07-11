@@ -223,6 +223,113 @@ TEST_CASE( "Test reverse_iterator", "[vector]" ) {
     std::reverse(v.begin(), v.end());
     REQUIRE( std::equal(std::begin(x), std::end(x), std::begin(v), std::end(v)) );
 
-    //Test incomplete
+    REQUIRE( std::equal(std::cbegin(x), std::cend(x), std::cbegin(v), std::cend(v)) );
+    REQUIRE( std::equal(x.crbegin(), x.crend(), v.crbegin(), v.crend()) );
 
+}
+
+TEST_CASE( "Test empty, front, back, at and empty", "[vector]" ) {
+
+    FVector<int> v{ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13 };
+    std::vector<int> x(v.rbegin(), v.rend());
+
+    std::reverse(v.begin(), v.end());
+    REQUIRE( std::equal(std::begin(x), std::end(x), std::begin(v), std::end(v)) );
+
+    REQUIRE( v.front() == x.front() );
+    REQUIRE( v.back()  == x.back()  );
+    REQUIRE( !v.empty() );
+    REQUIRE( v.at(7) == x.at(7) );
+    REQUIRE_THROWS_AS( v.at(245), std::out_of_range );
+    REQUIRE_THROWS_AS( v.at(-1), std::out_of_range );
+
+    v.emplace_back(34);
+    v.emplace_back(344);
+
+    REQUIRE( v.capacity() > v.size() );
+    v.shrink_to_fit();
+    REQUIRE( v.capacity() == v.size() );
+}
+
+TEST_CASE( "Test Swap and Assign", "[vector]" ){
+
+    FVector<char> v{};
+    v.emplace_back( { 'a', 't', '4', '7' } );
+    v.push_back('p');
+    v.push_back('1');
+
+    std::vector<char> x{ 'a', 't', '4', '7', 'p', '1' };
+
+    FVector<char> vs{'3', 'z'};
+
+    using std::swap;
+    swap(vs, v);
+
+    REQUIRE( std::equal(std::begin(x), std::end(x), std::begin(vs), std::end(vs)) );
+
+    SECTION("Assigning less than Size for FVector<T>::assign(size_type, const T&)"){
+        vs.assign(3, '7');
+        REQUIRE( vs.size() == 3 );
+        REQUIRE( vs[0] == '7' );
+        REQUIRE( vs[1] == '7' );
+        REQUIRE( vs[2] == '7' );
+        REQUIRE_THROWS( vs.at(4) );
+    }
+
+    SECTION("Assigning less than Size for FVector<T>::assign(std::initializer_list<T>)"){
+        vs.assign({'7', '7', '7'});
+        REQUIRE( vs.size() == 3 );
+        REQUIRE( vs[0] == '7' );
+        REQUIRE( vs[1] == '7' );
+        REQUIRE( vs[2] == '7' );
+        REQUIRE_THROWS( vs.at(4) );
+    }
+
+    SECTION("Assigning less than Size for FVector<T>::assign(Iter, Iter)"){
+        std::vector<char> x{'7', '0', 'w'};
+        vs.assign(x.crbegin(), x.crend());
+        REQUIRE( vs.size() == 3 );
+        REQUIRE( vs[0] == 'w' );
+        REQUIRE( vs[1] == '0' );
+        REQUIRE( vs[2] == '7' );
+        REQUIRE_THROWS( vs.at(4) );
+    }
+
+    SECTION("Assigning equal to Size for FVector<T>::assign(size_type, const T&)"){
+        v.assign(2, 'x');
+        REQUIRE( (v[0] == 'x' && v[1] == 'x') );
+        REQUIRE( v.size() == 2 );
+    }
+
+    SECTION("Assigning equal to Size for FVector<T>::assign(std::initializer_list<T>)"){
+        v.assign({'x', 'x'});
+        REQUIRE( (v[0] == 'x' && v[1] == 'x') );
+        REQUIRE( v.size() == 2 );
+    }
+
+    SECTION("Assigning equal to Size for FVector<T>::assign(Iter, Iter)"){
+        std::vector<char> x{'7', '0'};
+        v.assign(x.crbegin(), x.crend());
+        REQUIRE( (v[0] == '0' && v[1] == '7') );
+        REQUIRE( v.size() == 2 );
+    }
+
+    SECTION("Assigning greater than Size for FVector<T>::assign(size_type, const T&)"){
+        v.assign(5, 'x');
+        REQUIRE( (v[0] == 'x' && v[1] == 'x' && v[2] == 'x' && v[3] == 'x' && v[4] == 'x') );
+        REQUIRE( v.size() == 5 );
+    }
+
+    SECTION("Assigning greater than Size for FVector<T>::assign(std::initializer_list<T>)"){
+        v.assign({'x', 'a', 'b', 'c', 'z'});
+        REQUIRE( (v[0] == 'x' && v[1] == 'a' && v[2] == 'b' && v[3] == 'c' && v[4] == 'z') );
+        REQUIRE( v.size() == 5 );
+    }
+
+    SECTION("Assigning greater than Size for FVector<T>::assign(Iter, Iter)"){
+        std::vector<char> x{'7', '0', 'h', 'Q', char(0)};
+        v.assign(x.crbegin(), x.crend());
+        REQUIRE( (v[0] == char(0) && v[1] == 'Q' && v[2] == 'h' && v[3] == '0' && v[4] == '7') );
+        REQUIRE( v.size() == 5 );
+    }
 }
