@@ -41,12 +41,12 @@ class FVector{
 
             Qualified<T>* operator -> () const { return ptr; }
             Qualified<T>& operator * () const { return *ptr; }
-            Qualified<iterator>& operator ++ () const { ++ptr; return *const_cast<iterator*>(this); }
-            Qualified<iterator> operator ++ (int) const { iterator t(*this); ++ptr; return t; }
-            Qualified<iterator>& operator -- () const { --ptr; return *const_cast<iterator*>(this); }
-            Qualified<iterator> operator -- (int) const { iterator t(*this); --ptr; return t; }
-            Qualified<iterator>& operator += (int idx) const { ptr +=idx; return *const_cast<iterator*>(this); }
-            Qualified<iterator>& operator -= (int idx) const { ptr -=idx; return *const_cast<iterator*>(this); }
+            Qualified<iterator>& operator ++ () { ++ptr; return *const_cast<iterator*>(this); }
+            Qualified<iterator> operator ++ (int) { iterator t(*this); ++ptr; return t; }
+            Qualified<iterator>& operator -- () { --ptr; return *const_cast<iterator*>(this); }
+            Qualified<iterator> operator -- (int) { iterator t(*this); --ptr; return t; }
+            Qualified<iterator>& operator += (int idx) { ptr +=idx; return *const_cast<iterator*>(this); }
+            Qualified<iterator>& operator -= (int idx) { ptr -=idx; return *const_cast<iterator*>(this); }
             Qualified<iterator> operator + (int idx) const { return iterator(ptr + idx); }
             Qualified<iterator> operator - (int idx) const { return iterator(ptr - idx); }
             Qualified<T>& operator [] (std::ptrdiff_t idx) const { return *(ptr + idx); }
@@ -60,7 +60,7 @@ class FVector{
             friend bool operator >=  (const iterator& lhs, const iterator& rhs){ return (lhs.ptr - rhs.ptr) >= 0; }
         private:
             friend class FVector<T>;
-            mutable T* ptr = nullptr;
+            T* ptr = nullptr;
         };
 
 
@@ -81,12 +81,12 @@ class FVector{
 
             Qualified<T>* operator -> () const { return ptr; }
             Qualified<T>& operator * () const { return *ptr; }
-            Qualified<reverse_iterator>& operator ++ () const { --ptr; return *const_cast<reverse_iterator*>(this); }
-            Qualified<reverse_iterator> operator ++ (int) const { reverse_iterator t(*this); --ptr; return t; }
-            Qualified<reverse_iterator>& operator -- () const { ++ptr; return *const_cast<reverse_iterator*>(this); }
-            Qualified<reverse_iterator> operator -- (int) const { reverse_iterator t(*this); ++ptr; return t; }
-            Qualified<reverse_iterator>& operator += (int idx) const { ptr -=idx; return *const_cast<reverse_iterator*>(this); }
-            Qualified<reverse_iterator>& operator -= (int idx) const { ptr +=idx; return *const_cast<reverse_iterator*>(this); }
+            Qualified<reverse_iterator>& operator ++ () { --ptr; return *const_cast<reverse_iterator*>(this); }
+            Qualified<reverse_iterator> operator ++ (int) { reverse_iterator t(*this); --ptr; return t; }
+            Qualified<reverse_iterator>& operator -- () { ++ptr; return *const_cast<reverse_iterator*>(this); }
+            Qualified<reverse_iterator> operator -- (int) { reverse_iterator t(*this); ++ptr; return t; }
+            Qualified<reverse_iterator>& operator += (int idx) { ptr -=idx; return *const_cast<reverse_iterator*>(this); }
+            Qualified<reverse_iterator>& operator -= (int idx) { ptr +=idx; return *const_cast<reverse_iterator*>(this); }
             Qualified<reverse_iterator> operator + (int idx) const { return reverse_iterator(ptr - idx); }
             Qualified<reverse_iterator> operator - (int idx) const { return reverse_iterator(ptr + idx); }
             Qualified<T>& operator [] (std::ptrdiff_t idx) const { return *(ptr - idx); }
@@ -100,7 +100,7 @@ class FVector{
             friend bool operator <=  (const reverse_iterator& lhs, const reverse_iterator& rhs){ return (rhs.ptr - lhs.ptr) >= 0; }
         private:
             friend class FVector<T>;
-            mutable T* ptr = nullptr;
+            T* ptr = nullptr;
         };
 
 

@@ -118,11 +118,11 @@ class HashMap
             return &currentNode->data;
         }
 
-        Qualified<Iterator>& operator ++ () const {
+        Qualified<Iterator>& operator ++ () {
             go_to_next();
             return *const_cast<Iterator*>(this);
         }
-        Qualified<Iterator> operator ++ (int) const {
+        Qualified<Iterator> operator ++ (int) {
             Iterator tmp(*this);
             go_to_next();
             return tmp;
@@ -138,10 +138,10 @@ class HashMap
     private:
         friend class HashMap<Key, Value>;
         HashMap<Key, Value>* hashMap = nullptr;
-        mutable HashNode* currentNode = nullptr;
-        mutable SizeType idx = 0;
+        HashNode* currentNode = nullptr;
+        SizeType idx = 0;
 
-        HashNode* go_to_next(bool consider_currentNode = true) const {
+        HashNode* go_to_next(bool consider_currentNode = true) {
             if((consider_currentNode && !currentNode) || !consider_currentNode)
                 for(; idx < hashMap->m_bucketSize; idx++){
                     if(hashMap->m_buckets[idx]){
