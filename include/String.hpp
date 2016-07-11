@@ -175,6 +175,7 @@ class Basic_fstring
         }
 
         struct detail {
+
             template<bool isConst>
             class iterator : public std::iterator<std::random_access_iterator_tag, Char>
             {
@@ -187,14 +188,16 @@ class Basic_fstring
                 iterator(const iterator&) = default;
                 iterator& operator = (const iterator&) = default;
 
+                operator iterator<true> () const { return iterator<true>(ptr); }
+
                 Qualified<Char>* operator -> () const { return ptr; }
                 Qualified<Char>& operator * () const { return *ptr; }
-                Qualified<iterator>& operator ++ () const { ++ptr; return *const_cast<iterator*>(this); }
-                Qualified<iterator> operator ++ (int) const { iterator t(*this); ++ptr; return t; }
-                Qualified<iterator>& operator -- () const { --ptr; return *const_cast<iterator*>(this); }
-                Qualified<iterator> operator -- (int) const { iterator t(*this); --ptr; return t; }
-                Qualified<iterator>& operator += (int idx) const { ptr +=idx; return *const_cast<iterator*>(this); }
-                Qualified<iterator>& operator -= (int idx) const { ptr -=idx; return *const_cast<iterator*>(this); }
+                Qualified<iterator>& operator ++ () { ++ptr; return *const_cast<iterator*>(this); }
+                Qualified<iterator> operator ++ (int) { iterator t(*this); ++ptr; return t; }
+                Qualified<iterator>& operator -- () { --ptr; return *const_cast<iterator*>(this); }
+                Qualified<iterator> operator -- (int) { iterator t(*this); --ptr; return t; }
+                Qualified<iterator>& operator += (int idx) { ptr +=idx; return *const_cast<iterator*>(this); }
+                Qualified<iterator>& operator -= (int idx) { ptr -=idx; return *const_cast<iterator*>(this); }
                 Qualified<iterator> operator + (int idx) const { return iterator(ptr + idx); }
                 Qualified<iterator> operator - (int idx) const { return iterator(ptr - idx); }
                 Qualified<Char>& operator [] (std::ptrdiff_t idx) const { return *(ptr + idx); }
@@ -203,16 +206,60 @@ class Basic_fstring
                 friend bool operator == (const iterator& lhs, const iterator& rhs){ return lhs.ptr == rhs.ptr; }
                 friend bool operator != (const iterator& lhs, const iterator& rhs){ return!(lhs.ptr == rhs.ptr); }
                 friend bool operator <  (const iterator& lhs, const iterator& rhs){ return (rhs.ptr - lhs.ptr) > 0; }
+                friend bool operator >  (const iterator& lhs, const iterator& rhs){ return (lhs.ptr - rhs.ptr) > 0; }
+                friend bool operator >=  (const iterator& lhs, const iterator& rhs){ return (lhs.ptr - rhs.ptr) >= 0; }
+                friend bool operator <=  (const iterator& lhs, const iterator& rhs){ return (rhs.ptr - lhs.ptr) >= 0; }
             private:
                 friend class Basic_fstring<Char>;
-                mutable Char* ptr = nullptr;
+                Char* ptr = nullptr;
             };
+
+
+
+            template<bool isConst>
+            class reverse_iterator : public std::iterator<std::random_access_iterator_tag, Char>
+            {
+                template<typename U>
+                using Qualified = std::conditional_t<isConst, std::add_const_t<U>, U>;
+
+                reverse_iterator(Char* data) : ptr(data){}
+            public:
+                reverse_iterator() = default;
+                reverse_iterator(const reverse_iterator&) = default;
+                reverse_iterator& operator = (const reverse_iterator&) = default;
+
+                operator reverse_iterator<true> () const { return reverse_iterator<true>(ptr); }
+
+                Qualified<Char>* operator -> () const { return ptr; }
+                Qualified<Char>& operator * () const { return *ptr; }
+                Qualified<reverse_iterator>& operator ++ () { --ptr; return *const_cast<reverse_iterator*>(this); }
+                Qualified<reverse_iterator> operator ++ (int) { reverse_iterator t(*this); --ptr; return t; }
+                Qualified<reverse_iterator>& operator -- () { ++ptr; return *const_cast<reverse_iterator*>(this); }
+                Qualified<reverse_iterator> operator -- (int) { reverse_iterator t(*this); ++ptr; return t; }
+                Qualified<reverse_iterator>& operator += (int idx) { ptr -=idx; return *const_cast<reverse_iterator*>(this); }
+                Qualified<reverse_iterator>& operator -= (int idx) { ptr +=idx; return *const_cast<reverse_iterator*>(this); }
+                Qualified<reverse_iterator> operator + (int idx) const { return reverse_iterator(ptr - idx); }
+                Qualified<reverse_iterator> operator - (int idx) const { return reverse_iterator(ptr + idx); }
+                Qualified<Char>& operator [] (std::ptrdiff_t idx) const { return *(ptr - idx); }
+                std::ptrdiff_t operator - (const reverse_iterator& other) const { return (other.ptr - ptr); }
+
+                friend bool operator == (const reverse_iterator& lhs, const reverse_iterator& rhs){ return lhs.ptr == rhs.ptr; }
+                friend bool operator != (const reverse_iterator& lhs, const reverse_iterator& rhs){ return!(lhs.ptr == rhs.ptr); }
+                friend bool operator <  (const reverse_iterator& lhs, const reverse_iterator& rhs){ return (rhs.ptr - lhs.ptr) > 0; }
+                friend bool operator >  (const reverse_iterator& lhs, const reverse_iterator& rhs){ return (lhs.ptr - rhs.ptr) > 0; }
+                friend bool operator >=  (const reverse_iterator& lhs, const reverse_iterator& rhs){ return (lhs.ptr - rhs.ptr) >= 0; }
+                friend bool operator <=  (const reverse_iterator& lhs, const reverse_iterator& rhs){ return (rhs.ptr - lhs.ptr) >= 0; }
+            private:
+                friend class Basic_fstring<Char>;
+                Char* ptr = nullptr;
+            };
+
         };
 
     public:
+        //Normal Iterators
         using iterator = typename detail::template iterator<false>;
         using const_iterator = typename detail::template iterator<true>;
-        //using const_iterator = detail::iterator<true>;
 
         iterator begin() {return iterator(get_pointer()); }
         const_iterator begin() const {return const_iterator(get_pointer()); }
@@ -221,6 +268,18 @@ class Basic_fstring
         iterator end() {return iterator(get_pointer()+m_size); }
         const_iterator end() const {return const_iterator(get_pointer()+m_size); }
         const_iterator cend() const {return const_iterator(get_pointer()+m_size); }
+
+        //Reverse Iterators
+        using reverse_iterator = typename detail::template reverse_iterator<false>;
+        using const_reverse_iterator = typename detail::template reverse_iterator<true>;
+
+        reverse_iterator rbegin() {return reverse_iterator((get_pointer() - 1) + m_size); }
+        const_reverse_iterator rbegin() const {return const_reverse_iterator((get_pointer() - 1) + m_size); }
+        const_reverse_iterator crbegin() const {return const_reverse_iterator((get_pointer() - 1) + m_size); }
+
+        reverse_iterator rend() {return reverse_iterator(get_pointer()-1); }
+        const_reverse_iterator rend() const {return const_reverse_iterator(get_pointer()-1); }
+        const_reverse_iterator crend() const {return const_reverse_iterator(get_pointer()-1); }
 };
 
 template<typename Char> inline FORCE_INLINE
