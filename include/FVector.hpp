@@ -68,44 +68,6 @@ class FVector{
             T* ptr = nullptr;
         };
 
-        template<bool isConst>
-        class reverse_iterator : public std::iterator<std::random_access_iterator_tag, T>
-        {
-            template<typename U>
-            using Qualified = std::conditional_t<isConst, std::add_const_t<U>, U>;
-            //using difference_type = typename std::iterator<std::bidirectional_iterator_tag, T>::difference_type;
-
-            explicit reverse_iterator(T* data) : ptr(data){}
-        public:
-            reverse_iterator() = default;
-            reverse_iterator(const reverse_iterator&) = default;
-            reverse_iterator& operator = (const reverse_iterator&) = default;
-
-            operator reverse_iterator<true> () const { return reverse_iterator<true>(ptr); }
-
-            Qualified<T>* operator -> () const { return ptr; }
-            Qualified<T>& operator * () const { return *ptr; }
-            reverse_iterator& operator ++ () { --ptr; return *const_cast<reverse_iterator*>(this); }
-            reverse_iterator operator ++ (int) { reverse_iterator t(*this); --ptr; return t; }
-            reverse_iterator& operator -- () { ++ptr; return *const_cast<reverse_iterator*>(this); }
-            reverse_iterator operator -- (int) { reverse_iterator t(*this); ++ptr; return t; }
-            reverse_iterator& operator += (int idx) { ptr -=idx; return *const_cast<reverse_iterator*>(this); }
-            reverse_iterator& operator -= (int idx) { ptr +=idx; return *const_cast<reverse_iterator*>(this); }
-            reverse_iterator operator + (int idx) const { return reverse_iterator(ptr - idx); }
-            reverse_iterator operator - (int idx) const { return reverse_iterator(ptr + idx); }
-            Qualified<T>& operator [] (std::ptrdiff_t idx) const { return *(ptr - idx); }
-            std::ptrdiff_t operator - (const reverse_iterator& other) const { return (other.ptr - ptr); }
-
-            friend bool operator == (const reverse_iterator& lhs, const reverse_iterator& rhs){ return lhs.ptr == rhs.ptr; }
-            friend bool operator != (const reverse_iterator& lhs, const reverse_iterator& rhs){ return!(lhs.ptr == rhs.ptr); }
-            friend bool operator <  (const reverse_iterator& lhs, const reverse_iterator& rhs){ return (rhs.ptr - lhs.ptr) > 0; }
-            friend bool operator >  (const reverse_iterator& lhs, const reverse_iterator& rhs){ return (lhs.ptr - rhs.ptr) > 0; }
-            friend bool operator >=  (const reverse_iterator& lhs, const reverse_iterator& rhs){ return (lhs.ptr - rhs.ptr) >= 0; }
-            friend bool operator <=  (const reverse_iterator& lhs, const reverse_iterator& rhs){ return (rhs.ptr - lhs.ptr) >= 0; }
-        private:
-            friend class FVector<T>;
-            T* ptr = nullptr;
-        };
     };
 
 public:
@@ -122,29 +84,16 @@ public:
     const_iterator cend() const {return const_iterator(m_data+m_size); }
 
     //Reverse Iterators
-//    using reverse_iterator = std::reverse_iterator<iterator>;
-//    using const_reverse_iterator = std::reverse_iterator<const_iterator>;
+    using reverse_iterator = std::reverse_iterator<iterator>;
+    using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
-//    reverse_iterator rbegin() {return reverse_iterator(iterator(m_data + m_size)); }
-//    const_reverse_iterator rbegin() const {return const_reverse_iterator(iterator(m_data + m_size)); }
-//    const_reverse_iterator crbegin() const {return const_reverse_iterator(iterator(m_data + m_size)); }
+    reverse_iterator rbegin() {return reverse_iterator(iterator(m_data + m_size)); }
+    const_reverse_iterator rbegin() const {return const_reverse_iterator(iterator(m_data + m_size)); }
+    const_reverse_iterator crbegin() const {return const_reverse_iterator(iterator(m_data + m_size)); }
 
-//    reverse_iterator rend() {return reverse_iterator(iterator(m_data)); }
-//    const_reverse_iterator rend() const {return const_reverse_iterator(iterator(m_data)); }
-//    const_reverse_iterator crend() const {return const_reverse_iterator(iterator(m_data)); }
-
-
-    using reverse_iterator = typename detail::template reverse_iterator<false>;
-    using const_reverse_iterator = typename detail::template reverse_iterator<true>;
-
-    reverse_iterator rbegin() {return reverse_iterator((m_data - 1) + m_size); }
-    const_reverse_iterator rbegin() const {return const_reverse_iterator((m_data - 1) + m_size); }
-    const_reverse_iterator crbegin() const {return const_reverse_iterator((m_data - 1) + m_size); }
-
-    reverse_iterator rend() {return reverse_iterator(m_data-1); }
-    const_reverse_iterator rend() const {return const_reverse_iterator(m_data-1); }
-    const_reverse_iterator crend() const {return const_reverse_iterator(m_data-1); }
-
+    reverse_iterator rend() {return reverse_iterator(iterator(m_data)); }
+    const_reverse_iterator rend() const {return const_reverse_iterator(iterator(m_data)); }
+    const_reverse_iterator crend() const {return const_reverse_iterator(iterator(m_data)); }
 
 public:
 

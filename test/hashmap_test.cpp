@@ -17,7 +17,7 @@
 #include <algorithm>
 #include <functional>
 #include <iostream>
-//#include <FVector.hpp>
+#include <unordered_map>
 #include "HashMap.hpp"
 #include "String.hpp"
 #include <string>
@@ -119,8 +119,8 @@ TEST_CASE( "HashMaps should work", "[hash_map]" ) {
         mp["lol"] = 87;
         REQUIRE( mp.size() == mpSize + 1 );
 
-        //auto x = mp.insert(std::make_pair(Str("lol"), 65414));
-        auto x = mp.emplace("lol", 65414);
+        auto x = mp.insert(std::make_pair(Str("lol"), 65414));
+        //auto x = mp.emplace("lol", 65414);
         REQUIRE( x.first == mp.find("lol") );   // iterators are the same
         REQUIRE( x.second == false );           // it did not insert
         REQUIRE( (*x.first).second == 87 );     // value is the same
@@ -136,6 +136,27 @@ TEST_CASE( "HashMaps should work", "[hash_map]" ) {
         REQUIRE( new_value != loki_value );
         REQUIRE( new_value == 99 );
         REQUIRE( mp.size() == mpSize + 1 );
+    }
+    SECTION("Compare with std::unordered_map"){
+        auto hash = [](const FString& fs){ return std::hash<std::string>()(fs.to_string()); };
+        auto equal = [](const FString& a, const FString& b){ return a == b; };
+        std::unordered_map<FString, int, decltype(hash), decltype(equal)> xp(19, hash, equal);
+
+        /*
+        xp.insert(std::pair<Str, int>("Haha", 23));
+        xp.insert(std::pair<Str, int>("Huhu", 283));
+        xp.insert(std::pair<Str, int>("Yaha", 5234));
+        xp.insert(std::pair<Str, int>("Maha", -823));
+        xp.insert(std::pair<Str, int>("Kaha", -2423));
+        xp.insert(std::pair<Str, int>("Vaha", -9993));
+        xp.insert(std::pair<Str, int>("loki", -1113));
+        */
+
+        for(auto& x : mp)
+            xp.insert(x);
+
+        REQUIRE( std::all_of(mp.cbegin(), mp.cend(), [&](auto x){ return xp.find(x.first) != xp.end(); }) );
+
     }
 
 }

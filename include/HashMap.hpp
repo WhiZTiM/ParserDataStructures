@@ -83,17 +83,23 @@ class HashMap
         HashNode* next;
     };
 
+
+
+    ////////////////////////////////////////////////////////////////////////////////
+    ////                                                                       /////
+    ////                    BEGIN ITERATOR IMPLEMENTAION                       /////
+    ////                                                                       /////
     template<bool isConst>
-    class Iterator : public std::iterator<
-            std::forward_iterator_tag,
-            std::pair<const Key, Value>
-            >
-    {
+    class Iterator {
+        using V_T_KV = std::pair<const Key, Value>;
+    public:
+        using difference_type = std::ptrdiff_t;
+        using value_type = std::conditional_t<isConst, std::add_const_t<V_T_KV>, V_T_KV>;
+        using pointer = value_type*;
+        using reference = value_type&;
+        using iterator_category = std::forward_iterator_tag;
 
-        template<typename U>
-        using Qualified = std::conditional_t<isConst, std::add_const_t<U>, U>;
-        using value_type = std::pair<const Key, Value>;
-
+    private:
         Iterator(HashMap<Key, Value>* hmp) : hashMap(hmp) {
             currentNode = go_to_next(true);
         }
@@ -108,21 +114,23 @@ class HashMap
         ~Iterator(){}
         Iterator(const Iterator& other) = default;
         Iterator& operator = (const Iterator& other) = default;
+
+        //non-const iterators are implicitly convertible to const_iterator
         operator Iterator<true> () const { return Iterator<true>{hashMap, currentNode, idx}; }
 
-        Qualified<value_type>& operator* () const {
+        reference operator* () const {
             return currentNode->data;
         }
 
-        Qualified<value_type>* operator -> () const {
+        pointer operator -> () const {
             return &currentNode->data;
         }
 
-        Qualified<Iterator>& operator ++ () {
+        Iterator& operator ++ () {
             go_to_next();
             return *const_cast<Iterator*>(this);
         }
-        Qualified<Iterator> operator ++ (int) {
+        Iterator operator ++ (int) {
             Iterator tmp(*this);
             go_to_next();
             return tmp;
@@ -156,6 +164,11 @@ class HashMap
         }
     };
 
+    ////                                                                       /////
+    ////                    END ITERATOR IMPLEMENTAION                         /////
+    ////                                                                       /////
+    ////////////////////////////////////////////////////////////////////////////////
+
 public:
     using iterator = Iterator<false>;
     using const_iterator = Iterator<true>;
@@ -169,7 +182,17 @@ public:
     const_iterator cend() const     { return const_iterator(); }
 
     public:
-        using value_type = std::pair<const Key&, Value&>;
+        using key_type = Key;
+        using mapped_type = Value;
+        using value_type = std::pair<const Key&, Value>;
+        using size_type = SizeType;
+        using difference_type = std::ptrdiff_t;
+        using hasher = void;
+        using key_equal = void;
+        using pointer = value_type*;
+        using reference = value_type&;
+        using const_pointer = const pointer;
+        using const_reference = const reference;
 
         HashMap() {  /*******/  }
         ~HashMap(){  destroy(); }
@@ -194,6 +217,10 @@ public:
             copy_from(other);
         }
 
+        inline bool FORCE_INLINE empty() const {
+            return m_nodeSize != 0;
+        }
+
         inline SizeType FORCE_INLINE size() const {
             return m_nodeSize;
         }
@@ -213,15 +240,12 @@ public:
         }
 
         std::pair<iterator, bool> insert(std::pair<const Key, Value>&& kv){
-            static std::vector<SizeType> prVec = EratosthenesSieve<1000000, SizeType>().sieve();
-
-            if(m_nodeSize >= m_bucketSize * 1.5)    //load factor of  1 / 1.5  =  0.6666667
-                reserve(prVec[(m_bucketSize*2)+7]); //grow by a factor of 2... Add 7
-            //cout << "m_buckets is now: " << m_buckets << endl;
+            grow_memory_if_needed();
             return imbue_data(kv.first, std::move(kv.second), m_buckets, m_bucketSize);
         }
 
         Value& operator [] (const Key& ky){
+            grow_memory_if_needed();
             return imbue_data(ky, Value{}, m_buckets, m_bucketSize).first->second;
         }
 
@@ -231,6 +255,10 @@ public:
 
         const_iterator find(const Key& ky) const {
             return const_cast<HashMap*>(this)->getNode(ky);
+        }
+
+        size_type count(const Key& ky) const {
+            return find(ky) != cend() ? 1 : 0;
         }
 
         SizeType erase(const const_iterator& iter){
@@ -264,6 +292,13 @@ public:
                 }
             }
             return rtn;
+        }
+
+        inline void clear(){
+            destroy();
+            m_buckets = nullptr;
+            m_bucketSize = 0;
+            m_nodeSize = 0;
         }
 
         inline void reserve(SizeType sz){
@@ -300,6 +335,16 @@ public:
             return hash_it(ky) % sz;
         }
 
+        void swap(HashMap& other){
+            std::swap(m_buckets, other.m_buckets);
+            std::swap(m_bucketSize, other.m_bucketSize);
+            std::swap(m_nodeSize, other.m_nodeSize);
+        }
+
+        void friend swap(HashMap& first, HashMap& second){
+            first.swap(second);
+        }
+
     private:
 
         HashNode** m_buckets = nullptr;
@@ -317,6 +362,13 @@ public:
         inline void FORCE_INLINE copy_from(const HashMap& other){
             reserve(other.m_bucketSize);
             throw std::runtime_error("Not yet implemented");
+        }
+
+        inline void grow_memory_if_needed(){
+            static std::vector<SizeType> prVec = EratosthenesSieve<1000000, SizeType>().sieve();
+
+            if(m_nodeSize >= m_bucketSize * 1.5)    //load factor of  1 / 1.5  =  0.6666667
+                reserve(prVec[(m_bucketSize*2)+7]); //grow by a factor of 2... Add 7
         }
 
         inline void destroy() noexcept {
@@ -365,6 +417,8 @@ public:
         }
 
         inline iterator FORCE_INLINE getNode(const Key& ky) {
+            if(m_bucketSize == 0)
+                return end();
             SizeType idx = hash(ky, m_bucketSize);
             HashNode* node = m_buckets[idx];
             if(node){

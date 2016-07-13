@@ -13,7 +13,6 @@
 #include "catch.hpp"
 #include <vector>
 #include <algorithm>
-//#include <typeinfo>
 #include <string>
 #include "String.hpp"
 
@@ -252,5 +251,20 @@ TEST_CASE("Using STL algorithm is acceptable", "[string]"){
         std::sort(str.begin(), str.end());
         std::sort(str2.begin(), str2.end());
         REQUIRE( std::equal(std::begin(str), std::end(str), std::begin(str2), std::end(str2)) );
+    }
+}
+
+TEST_CASE("Using Iterators", "[string]"){
+    FString str = "The quick brown fox jumps over the lazy dog";
+    std::string str2 = "The quick brown fox jumps over the lazy dog";
+
+    SECTION("Forward Iterators"){
+        REQUIRE( std::equal(std::begin(str), std::end(str), std::begin(str2), std::end(str2)) );
+    }
+
+    SECTION("Reverse Iterators"){
+        std::reverse(str.begin(), str.end());
+
+        REQUIRE( std::equal(str.crbegin(), str.crend(), std::begin(str2), std::end(str2)) );
     }
 }
