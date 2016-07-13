@@ -331,7 +331,6 @@ public:
         }
 
         inline SizeType FORCE_INLINE hash(const Key& ky, SizeType sz) const {
-            //cout << "$$$$$$$$$$$$$$KEY: "<< ky << " $$$HASH: " << hash_it(ky) << " % " << sz << " = " << hash_it(ky) % sz << endl;
             return hash_it(ky) % sz;
         }
 
