@@ -177,11 +177,17 @@ class Basic_fstring
         struct detail {
 
             template<bool isConst>
-            class iterator : public std::iterator<std::random_access_iterator_tag, Char>
+            class iterator //: public std::iterator<std::random_access_iterator_tag, Char>
             {
-                template<typename U>
-                using Qualified = std::conditional_t<isConst, std::add_const_t<U>, U>;
 
+            public:
+                using difference_type = std::ptrdiff_t;
+                using value_type = std::conditional_t<isConst, std::add_const_t<Char>, Char>;
+                using pointer = value_type*;
+                using reference = value_type&;
+                using iterator_category = std::random_access_iterator_tag;
+
+            private:
                 iterator(Char* data) : ptr(data){}
             public:
                 iterator() = default;
@@ -190,17 +196,17 @@ class Basic_fstring
 
                 operator iterator<true> () const { return iterator<true>(ptr); }
 
-                Qualified<Char>* operator -> () const { return ptr; }
-                Qualified<Char>& operator * () const { return *ptr; }
-                Qualified<iterator>& operator ++ () { ++ptr; return *const_cast<iterator*>(this); }
-                Qualified<iterator> operator ++ (int) { iterator t(*this); ++ptr; return t; }
-                Qualified<iterator>& operator -- () { --ptr; return *const_cast<iterator*>(this); }
-                Qualified<iterator> operator -- (int) { iterator t(*this); --ptr; return t; }
-                Qualified<iterator>& operator += (int idx) { ptr +=idx; return *const_cast<iterator*>(this); }
-                Qualified<iterator>& operator -= (int idx) { ptr -=idx; return *const_cast<iterator*>(this); }
-                Qualified<iterator> operator + (int idx) const { return iterator(ptr + idx); }
-                Qualified<iterator> operator - (int idx) const { return iterator(ptr - idx); }
-                Qualified<Char>& operator [] (std::ptrdiff_t idx) const { return *(ptr + idx); }
+                pointer operator -> () const { return ptr; }
+                reference operator * () const { return *ptr; }
+                iterator& operator ++ () { ++ptr; return *const_cast<iterator*>(this); }
+                iterator operator ++ (int) { iterator t(*this); ++ptr; return t; }
+                iterator& operator -- () { --ptr; return *const_cast<iterator*>(this); }
+                iterator operator -- (int) { iterator t(*this); --ptr; return t; }
+                iterator& operator += (int idx) { ptr +=idx; return *const_cast<iterator*>(this); }
+                iterator& operator -= (int idx) { ptr -=idx; return *const_cast<iterator*>(this); }
+                iterator operator + (int idx) const { return iterator(ptr + idx); }
+                iterator operator - (int idx) const { return iterator(ptr - idx); }
+                reference operator [] (std::ptrdiff_t idx) const { return *(ptr + idx); }
                 std::ptrdiff_t operator - (const iterator& other) const { return (ptr - other.ptr); }
 
                 friend bool operator == (const iterator& lhs, const iterator& rhs){ return lhs.ptr == rhs.ptr; }
@@ -213,8 +219,6 @@ class Basic_fstring
                 friend class Basic_fstring<Char>;
                 Char* ptr = nullptr;
             };
-
-
 
             template<bool isConst>
             class reverse_iterator : public std::iterator<std::random_access_iterator_tag, Char>
