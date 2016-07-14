@@ -22,6 +22,19 @@ template<typename Char>
 class Basic_fstring
 {
     public:
+
+    using value_type = Char;
+    using size_type = SizeType;
+    using difference_type = std::ptrdiff_t;
+    using pointer = value_type*;
+    using reference = value_type&;
+    using const_pointer = const pointer;
+    using const_reference = const reference;
+
+    //Itertors are defined at the bottom
+
+        static const size_type npos = static_cast<size_type>(-1);
+
         static constexpr int kSS = 8;
         Basic_fstring(){}
 
@@ -100,6 +113,18 @@ class Basic_fstring
 
         void FORCE_INLINE clear() noexcept {
             destroy();
+        }
+
+        size_type find(const Basic_fstring& str, size_type pos = 0){
+            for(unsigned i = pos; i < size(); i++){
+                unsigned j = 0;
+                for(; j < str.size(); j++)
+                    if(operator [](i) != str[j])
+                        break;
+                if(j == str.size())
+                    return i;
+            }
+            return npos;
         }
 
         inline static int FORCE_INLINE compare(Basic_fstring const& lhs, Basic_fstring const& rhs) noexcept {
