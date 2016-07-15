@@ -49,7 +49,6 @@ TEST_CASE( "Test Construction and Assingment of Small Strings", "[string]" ) {
     SECTION( "Modifying the string shouldn't be a problem" ){
 
         str = "Hello World!";
-        REQUIRE(str.size() == 12 );
 
         REQUIRE(str[0]  == 'H');
         REQUIRE(str[5]  == ' ');
@@ -267,4 +266,81 @@ TEST_CASE("Using Iterators", "[string]"){
 
         REQUIRE( std::equal(str.crbegin(), str.crend(), std::begin(str2), std::end(str2)) );
     }
+}
+
+TEST_CASE("Find and SubStr Methods", "[string]"){
+    FString str = "the quick brown fox jumps over the lazy dog";
+    std::string str2 = "the quick brown fox jumps over the lazy dog";
+
+    SECTION("Test Find Forward"){
+        auto x1 = str.find("jumps");
+        auto x2 = str.find("Mumu");
+
+        auto y1 = str2.find("jumps");
+
+        REQUIRE( x1 != FString::npos );
+        REQUIRE( x2 == FString::npos );
+
+        REQUIRE( x1 == y1 );
+
+        REQUIRE( str.find('o') == str2.find('o') );
+        REQUIRE( str.find('0') == FString::npos  );
+        REQUIRE( str.find('u', 27) == FString::npos );
+        REQUIRE( str.find("jumps", 26) == FString::npos );
+
+        REQUIRE( str.find('o', 17) == str2.find('o', 17) );
+        REQUIRE( str.find("the", 17) == str2.find("the", 17) );
+    }
+
+    SECTION("Test Find backwards"){
+        auto x1 = str.find("the");
+        auto x2 = str.rfind("the");
+
+        auto y1 = str2.find("the");
+        auto y2 = str2.rfind("the");
+
+        REQUIRE( x1 == y1 );
+        REQUIRE( x2 == y2 );
+
+        REQUIRE( str.rfind('o') == str2.rfind('o') );
+        REQUIRE( str.rfind('o', 29) == str2.rfind('o', 29) );
+
+        REQUIRE( str.rfind("the", 19) == str2.rfind("the", 19) );
+
+        REQUIRE( str.rfind("Mumu") == FString::npos );
+        REQUIRE( str.rfind('0')    == FString::npos );
+
+        REQUIRE( str.rfind('o', 9) == FString::npos );
+    }
+
+    SECTION("Test substr method"){
+
+        //small string
+        auto substr = FString("Today").substr(2);
+        REQUIRE( substr == "day" );
+
+        substr = FString("Today").substr(2, 3);
+        REQUIRE( substr == "d" );
+
+        //Large String
+        substr = str.substr(8);
+        auto xubstr = str2.substr(8);
+
+        REQUIRE( substr.to_string() == xubstr );
+
+        substr = str.substr(10, 37);
+        xubstr = str2.substr(10, 37);
+
+        REQUIRE( substr.to_string() == xubstr );
+    }
+
+    SECTION("Swap Works"){
+        FString ks = str;
+        FString ms = "Hullabaloo";
+        swap(ms, str);
+
+        REQUIRE( str == "Hullabaloo" );
+        REQUIRE( ms == ks );
+    }
+
 }

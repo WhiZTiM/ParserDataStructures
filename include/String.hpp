@@ -33,7 +33,7 @@ class Basic_fstring
 
     //Itertors are defined at the bottom
 
-        static const size_type npos = static_cast<size_type>(-1);
+        static const size_type npos;
 
         static constexpr int kSS = 8;
         Basic_fstring(){}
@@ -115,14 +115,62 @@ class Basic_fstring
             destroy();
         }
 
-        size_type find(const Basic_fstring& str, size_type pos = 0){
+        void swap(Basic_fstring& other){
+            std::swap(m_data, other.m_data);
+            std::swap(m_size, other.m_size);
+        }
+
+        Basic_fstring substr(size_type pos, size_type count = npos) const {
+            Basic_fstring temp;
+            count = count == npos ? size() : count;
+            temp.copy_construct_from(get_pointer()+pos, pos+count);
+            return temp;
+        }
+
+        size_type find(const Basic_fstring& str, size_type pos = 0) const {
             for(unsigned i = pos; i < size(); i++){
                 unsigned j = 0;
-                for(; j < str.size(); j++)
-                    if(operator [](i) != str[j])
+                for(; j < str.size() && (i+j) < size(); j++)
+                    if(operator [](i+j) != str[j])
                         break;
                 if(j == str.size())
                     return i;
+            }
+            return npos;
+        }
+
+        FORCE_INLINE size_type find(Char ch, size_type pos = 0) const {
+            for(unsigned i = pos; i < size(); i++)
+                if(operator [](i) == ch)
+                    return i;
+            return npos;
+        }
+
+        size_type rfind(const Basic_fstring& str, size_type pos = npos) const {
+            if(size() == 0 || str.size() == 0) return npos;
+            pos = pos == npos ? size() : (pos + 1);
+            for(unsigned i = pos - 1; ; i--){
+                unsigned j = str.size() - 1;
+                for(unsigned q = 0; i >= j; j--, q++){
+                    if(operator [](i-q) != str[j])
+                        break;
+                    if(j == 0)
+                        return (i - q);
+                }
+                 if(i == 0)
+                     break;
+            }
+            return npos;
+        }
+
+        FORCE_INLINE size_type rfind(Char ch, size_type pos = npos) const {
+            if(size() == 0) return npos;
+            pos = pos == npos ? size() : (pos + 1);
+            for(unsigned i = pos - 1; ; i--){
+                if(operator [](i) == ch)
+                    return i;
+                if(i == 0)
+                    break;
             }
             return npos;
         }
@@ -273,6 +321,9 @@ class Basic_fstring
 
 };
 
+template<typename Char>
+const typename Basic_fstring<Char>::size_type Basic_fstring<Char>::npos = static_cast<size_type>(-1);
+
 template<typename Char> inline FORCE_INLINE
 bool operator == (const Basic_fstring<Char>& lhs, const Basic_fstring<Char>& rhs){
     return Basic_fstring<Char>::compare(lhs, rhs) == 0;
@@ -337,17 +388,17 @@ inline std::basic_ostream<Char>& operator << (std::basic_ostream<Char>& o, Basic
     return o;
 }
 
-template<typename Char>
-inline Basic_fstring<Char>& getline(std::basic_istream<Char>& i, Basic_fstring<Char>& str){
-    std::basic_string<Char> sstr; std::getline(i, sstr);
-    return str = sstr;
+namespace std {
+    template<typename Char>
+    inline Basic_fstring<Char>& getline(std::basic_istream<Char>& i, Basic_fstring<Char>& str){
+        std::basic_string<Char> sstr; std::getline(i, sstr);
+        return str = sstr;
+    }
 }
 
 template<typename Char>
 inline void swap(Basic_fstring<Char>& lhs, Basic_fstring<Char>& rhs){
-    auto tmp = lhs;
-    lhs = std::move(rhs);
-    rhs = std::move(tmp);
+    lhs.swap(rhs);
 }
 
 using FString = Basic_fstring<char>;
