@@ -360,7 +360,9 @@ public:
 
         inline void FORCE_INLINE copy_from(const HashMap& other){
             reserve(other.m_bucketSize);
-            throw std::runtime_error("Not yet implemented");
+            for(const auto& v : other)
+                emplace(v.first, v.second);
+            //throw std::runtime_error("Not yet implemented");
         }
 
         inline void grow_memory_if_needed(){
