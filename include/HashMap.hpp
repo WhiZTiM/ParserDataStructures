@@ -209,6 +209,7 @@ public:
             if(this == &other) return *this;
             destroy();
             move_from(std::move(other));
+            return *this;
         }
 
         HashMap& operator=(const HashMap& other){
@@ -218,7 +219,7 @@ public:
         }
 
         inline bool FORCE_INLINE empty() const {
-            return m_nodeSize != 0;
+            return m_nodeSize == 0;
         }
 
         inline SizeType FORCE_INLINE size() const {

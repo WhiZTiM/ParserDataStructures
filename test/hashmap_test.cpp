@@ -159,4 +159,20 @@ TEST_CASE( "HashMaps should work", "[hash_map]" ) {
 
     }
 
+    SECTION("Swap And Copy Construction"){
+        auto kd = mp;
+        REQUIRE( std::all_of(mp.cbegin(), mp.cend(), [&](auto x){ return kd.find(x.first) != kd.end(); }) );
+        decltype(mp) pl;
+        pl.emplace("sweet", 111);
+
+        std::swap(pl, kd);
+        REQUIRE( std::all_of(mp.cbegin(), mp.cend(), [&](auto x){ return pl.find(x.first) != pl.end(); }) );
+
+        auto ql = std::move(pl);
+
+        REQUIRE( pl.empty() );
+        REQUIRE( pl.size() == 0 );
+        REQUIRE( std::all_of(mp.cbegin(), mp.cend(), [&](auto x){ return ql.find(x.first) != ql.end(); }) );
+    }
+
 }
