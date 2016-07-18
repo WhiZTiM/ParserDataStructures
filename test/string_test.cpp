@@ -15,6 +15,7 @@
 #include <algorithm>
 #include <string>
 #include "String.hpp"
+#include <sstream>
 
 unsigned int Factorial( unsigned int number ) {
     return number <= 1 ? number : Factorial(number-1)*number;
@@ -343,4 +344,19 @@ TEST_CASE("Find and SubStr Methods", "[string]"){
         REQUIRE( ms == ks );
     }
 
+}
+
+TEST_CASE("Test with streams", "[string]"){
+    FString str = "This is so amazing";
+
+    SECTION("getline test"){
+
+        std::string s;
+        std::stringstream ss("This better be a good thing");
+        while (ss >> str) {
+            s += str.to_string();
+        }
+
+        REQUIRE( s == "Thisbetterbeagoodthing" );
+    }
 }

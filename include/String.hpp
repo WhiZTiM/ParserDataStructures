@@ -390,9 +390,9 @@ inline std::basic_ostream<Char>& operator << (std::basic_ostream<Char>& o, Basic
 
 namespace std {
     template<typename Char>
-    inline Basic_fstring<Char>& getline(std::basic_istream<Char>& i, Basic_fstring<Char>& str){
+    inline std::basic_istream<Char>& getline(std::basic_istream<Char>& i, Basic_fstring<Char>& str){
         std::basic_string<Char> sstr; std::getline(i, sstr);
-        return str = sstr;
+        return str = sstr, i;
     }
 }
 
