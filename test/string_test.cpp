@@ -220,8 +220,6 @@ TEST_CASE( "Test Construction and Assingment of Large Strings", "[string]" ) {
         //Name shadowing of str
         const char* ppx = "Hello World!";
 
-        //std::cout << typeid(ppx).name() << std::endl;
-
         FString str(ppx);
 
         REQUIRE(str.size() == 12);

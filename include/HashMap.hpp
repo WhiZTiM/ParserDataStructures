@@ -20,7 +20,7 @@
 #include <forward_list>
 #include "Config.hpp"
 #include <iostream>
-#include <String.hpp>
+#include "String.hpp"
 
 using namespace std;
 
@@ -306,13 +306,7 @@ public:
             if(sz > m_bucketSize){
                 void* addr = SFAllocator<HashNode**>::allocate(sz);
                 HashNode** data = static_cast<HashNode**>(addr);
-                HashNode* ad2 = static_cast<HashNode*>(addr);
 
-                //cout << "Address of void* addr: " << addr << endl;
-                //cout << "Address of HashNode** data: " << data << endl;
-                //cout << "Address of HashNode* ad2: " << ad2 << endl;
-
-                (void)ad2;
                 for(SizeType i = 0; i < sz; i++)
                     data[i] = nullptr;
                 SizeType counter = 0;
@@ -363,7 +357,6 @@ public:
             reserve(other.m_bucketSize);
             for(const auto& v : other)
                 emplace(v.first, v.second);
-            //throw std::runtime_error("Not yet implemented");
         }
 
         inline void grow_memory_if_needed(){
