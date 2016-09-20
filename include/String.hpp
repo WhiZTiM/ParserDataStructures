@@ -17,6 +17,7 @@
 #include <utility>
 #include <ostream>
 #include <istream>
+#include <cassert>
 
 template<typename Char>
 class Basic_fstring
@@ -132,9 +133,32 @@ class Basic_fstring
         }
 
         Basic_fstring substr(size_type pos, size_type count = npos) const {
+            const auto string_size = this->size();
+            assert(pos <= string_size && "starting index must be less than the size of this string!");
             Basic_fstring temp;
-            count = count == npos ? size() : count;
-            temp.copy_construct_from(get_pointer()+pos, pos+count);
+            count = (count >= string_size || overflows_by_addition(pos, count) || pos+count > string_size) ?
+                        string_size - pos : count;
+            temp.copy_construct_from(get_pointer()+pos, count+1);
+
+            // explicitly terminate the string since we do not know whether the
+            // resulting substring is nulll terminated
+            temp[count] = '\0';
+            return temp;
+        }
+
+        [[deprecated]]
+        Basic_fstring portion(size_type start, size_type stop = npos) const {
+            const auto string_size = this->size();
+            assert(start <= stop && "interval must be positive!");
+            assert(stop <= string_size && "end index must be less than the size of this string!");
+            assert(start <= string_size && "starting index must be less than the size of this string!");
+            Basic_fstring temp;
+            stop = (stop == npos) ? stop - start : stop;
+            temp.copy_construct_from(get_pointer()+start, stop+1);
+
+            // explicitly terminate the string since we do not know whether the
+            // resulting substring is nulll terminated
+            temp[stop] = '\0';
             return temp;
         }
 
@@ -243,6 +267,7 @@ class Basic_fstring
         }
 
         inline FORCE_INLINE void copy_construct_from(const Char* ch, SizeType sz){
+            //assert(sz > 1 && ch[sz-1] == '\0' && "The string to be constructed from must be null terminated");
             m_size = sz - 1;
             if(sz < kSS)
                 std::memcpy(&m_data.local, ch, sizeof(Char)*sz);
