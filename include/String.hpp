@@ -44,7 +44,7 @@ class Basic_fstring
         static constexpr int kSS = 8;
 
         //! Constructs an empty string, very fast
-        Basic_fstring(){}
+        Basic_fstring(){ get_pointer()[0] = '\0'; }
 
         //! Constructs a String from a string literal, faster than any STL implementation
         template<SizeType N>
@@ -267,7 +267,6 @@ class Basic_fstring
         }
 
         inline FORCE_INLINE void copy_construct_from(const Char* ch, SizeType sz){
-            //assert(sz > 1 && ch[sz-1] == '\0' && "The string to be constructed from must be null terminated");
             m_size = sz - 1;
             if(sz < kSS)
                 std::memcpy(&m_data.local, ch, sizeof(Char)*sz);
