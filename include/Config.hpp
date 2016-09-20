@@ -14,6 +14,7 @@
 #define PLATFORM_CONFIG_H
 
 #include <new>
+#include <limits>
 #include <iterator>
 #include <type_traits>
 
@@ -21,6 +22,8 @@
 #define FORCE_INLINE __attribute__((always_inline))
 #elif _MSC_VER
 #define FORCE_INLINE __forceinline
+#else
+#define FORCE_INLINE inline
 #endif // __GNUC__
 
 
@@ -41,6 +44,11 @@ template <typename T>
 inline void nulled_delete(T* ptr){
     delete ptr;
     ptr = nullptr;
+}
+
+template<typename T>
+constexpr bool overflows_by_addition(T a, T b){
+    return (b > 0) && (a > std::numeric_limits<T>::max() - b);
 }
 
 #endif // PLATFORM_CONFIG_H
