@@ -314,9 +314,25 @@ TEST_CASE("Find and SubStr Methods", "[string]"){
 
     SECTION("Test substr method"){
 
+        //Empty Strings
+        //REQUIRE( std::string().substr(0).empty() );
+        //REQUIRE( std::string("").substr(0).empty() );
+        REQUIRE( FString().substr(0).empty() );
+        REQUIRE( FString("").substr(0).empty() );
+        REQUIRE( FString().substr(0, 0).empty() );
+        REQUIRE( FString("").substr(0, 0).empty() );
+        REQUIRE( FString("Hah").substr(0, 0).empty() );
+        REQUIRE( FString("Hah").substr(2, 0).empty() );
+        REQUIRE( FString("Somehting Out of the real normal ehhh? hahah").substr(0, 0).empty() );
+        REQUIRE( !FString("Somehting Out of the real normal ehhh? hahah").substr(2, 2).empty() );
+
+        REQUIRE( FString().substr(0)[0] == '\0');
+
         //small string
         auto substr = FString("Today").substr(2);
-        REQUIRE( substr == "day" );
+        REQUIRE( substr.size() == 3 );
+        REQUIRE( substr[3] == '\0'  );
+        REQUIRE( substr == "day"    );
 
         substr = FString("Today").substr(2, 3);
         REQUIRE( substr == "d" );
@@ -330,6 +346,7 @@ TEST_CASE("Find and SubStr Methods", "[string]"){
         substr = str.substr(10, 37);
         xubstr = str2.substr(10, 37);
 
+        REQUIRE( substr.size() == str.size() - 10 );
         REQUIRE( substr.to_string() == xubstr );
     }
 
