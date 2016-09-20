@@ -28,21 +28,32 @@ class Basic_fstring
     using difference_type = std::ptrdiff_t;
     using pointer = value_type*;
     using reference = value_type&;
-    using const_pointer = const pointer;
-    using const_reference = const reference;
+    using const_pointer = const value_type*;
+    using const_reference = const value_type&;
 
     //Itertors are defined at the bottom
 
+        //Defined as  static_cast<size_type>(-1);
         static const size_type npos;
 
+        //! kSS is the constant for Short String Optimisation
+        //! To prevent wastage from padding, it should be
+        //! a multiple of 8 bytes on 64 bit systems, and worse
+        //! 4 bytes on 32 bit systems
         static constexpr int kSS = 8;
+
+        //! Constructs an empty string, very fast
         Basic_fstring(){}
 
+        //! Constructs a String from a string literal, faster than any STL implementation
         template<SizeType N>
         Basic_fstring(const Char (&data)[N]){
             copy_construct_from(data, N);
         }
 
+        //! Constructs a String from a pointer to an array of character string.
+        //! NOTE: the string must be NULL terminated, else, the behavior is Undefined
+        //! This constructor only part
         template<typename T, std::enable_if_t<std::is_same<T, const Char*>::value>* = nullptr>
         explicit Basic_fstring(const T ch){
             copy_construct_from(ch, strlen(ch)+1);
