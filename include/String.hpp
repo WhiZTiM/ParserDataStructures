@@ -18,6 +18,7 @@
 #include <ostream>
 #include <istream>
 #include <cassert>
+#include <type_traits>
 
 template<typename Char>
 class Basic_fstring
@@ -325,7 +326,7 @@ class Basic_fstring
                 friend bool operator <=  (const iterator& lhs, const iterator& rhs){ return (rhs.ptr - lhs.ptr) >= 0; }
             private:
                 friend class Basic_fstring<Char>;
-                Char* ptr = nullptr;
+                pointer ptr = nullptr;
             };
         };
 
