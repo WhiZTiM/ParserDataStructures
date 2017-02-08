@@ -36,7 +36,7 @@ class FVector{
             using iterator_category = std::random_access_iterator_tag;
 
         private:
-            explicit iterator(T* data) : ptr(data){}
+            explicit iterator(pointer data) : ptr(data){}
         public:
             iterator() = default;
             iterator(const iterator&) = default;
@@ -65,7 +65,7 @@ class FVector{
             friend bool operator >=  (const iterator& lhs, const iterator& rhs){ return (lhs.ptr - rhs.ptr) >= 0; }
         private:
             friend class FVector<T>;
-            T* ptr = nullptr;
+            pointer ptr = nullptr;
         };
 
     };
@@ -226,7 +226,7 @@ public:
     void emplace_back(Args&&... arg){
         if(m_size >= m_capacity)
             grow_capacity();    //should be same as calling reserve((m_size+1) * 2);
-        new(m_data+m_size) T(std::forward<Args&&>(arg)...);
+        new(m_data+m_size) T(std::forward<Args>(arg)...);
         m_size += 1;
     }
 

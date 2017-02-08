@@ -18,5 +18,7 @@ add_subdirectory(test)
 FILE(GLOB_RECURSE LibFiles "include/*.hpp")
 add_custom_target(headers SOURCES ${LibFiles})
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 #set_target_properties(test PROPERTIES LINKER_LANGUAGE CXX)
 #target_link_libraries(${PROJECT_NAME} ParserDataStructureTest)
