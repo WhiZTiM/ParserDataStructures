@@ -99,12 +99,15 @@ class HashMap
         using reference = value_type&;
         using iterator_category = std::forward_iterator_tag;
 
+        using HMap = std::conditional_t<isConst, std::add_const_t<HashMap>*, HashMap*>;
+        using Node = std::conditional_t<isConst, std::add_const_t<HashNode>*, HashNode*>;
+
     private:
-        Iterator(HashMap<Key, Value>* hmp) : hashMap(hmp) {
+        Iterator(HMap hmp) : hashMap(hmp) {
             currentNode = go_to_next(true);
         }
 
-        Iterator(HashMap<Key, Value> *hmp, HashNode* nd, SizeType index) :
+        Iterator(HMap hmp, Node nd, SizeType index) :
             hashMap(hmp), currentNode(nd), idx(index) {
             //
         }
@@ -145,11 +148,11 @@ class HashMap
 
     private:
         friend class HashMap<Key, Value>;
-        HashMap<Key, Value>* hashMap = nullptr;
-        HashNode* currentNode = nullptr;
+        HMap hashMap = nullptr;
+        Node currentNode = nullptr;
         SizeType idx = 0;
 
-        HashNode* go_to_next(bool consider_currentNode = true) {
+        Node go_to_next(bool consider_currentNode = true) {
             if((consider_currentNode && !currentNode) || !consider_currentNode)
                 for(; idx < hashMap->m_bucketSize; idx++){
                     if(hashMap->m_buckets[idx]){
@@ -191,8 +194,8 @@ public:
         using key_equal = void;
         using pointer = value_type*;
         using reference = value_type&;
-        using const_pointer = const pointer;
-        using const_reference = const reference;
+        using const_pointer = const value_type*;
+        using const_reference = const value_type&;
 
         HashMap() {  /*******/  }
         ~HashMap(){  destroy(); }
