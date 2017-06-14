@@ -257,7 +257,7 @@ class Basic_fstring
         }
         inline FORCE_INLINE void copy_from(const Basic_fstring& other){
             if(other.m_size >= kSS){
-                m_size = other.m_size;
+                m_size = other.m_size; //Something here
                 m_data.heap = static_cast<Char*>(operator new (sizeof(Char) * (other.m_size+1)));// new Char[other.m_size+1];
                 std::memcpy(m_data.heap, other.m_data.heap, other.m_size+1);
             }
@@ -443,3 +443,4 @@ using F16String = Basic_fstring<char16_t>;
 using F32String = Basic_fstring<char32_t>;
 
 #endif // STRING_H
+
