@@ -74,13 +74,34 @@ TEST_CASE( "vectors can be reserved at construction", "[vector]" ) {
         v.reserve( 10 );
 
         REQUIRE( v.size() == 0 );
-        REQUIRE( v.capacity() >= 10 );
+        REQUIRE( v.capacity() == 10 );
     }
     SECTION( "reserving smaller does not change size or capacity" ) {
         v.reserve( 0 );
 
         REQUIRE( v.size() == 0 );
-        REQUIRE( v.capacity() >= 5 );
+        REQUIRE( v.capacity() == 5 );
+    }
+}
+
+TEST_CASE( "Construct a Vector with N copies of elements", "[vector]"){
+    FVector<std::string> v(99, "Hello Timothy");
+    std::vector<std::string> x(99, "Hello Timothy");
+
+    REQUIRE( v.size() == 99 );
+    REQUIRE( v.capacity() == 99 );
+
+    REQUIRE( std::equal(std::begin(x), std::end(x), std::begin(v), std::end(v)) );
+
+    SECTION( "Test Shrinking" ){
+        //Pop 49 elements
+        for(int i = 0; i < 49; i++)
+            v.pop_back();
+
+        REQUIRE( v.size() == 50 );
+        REQUIRE( v.capacity() == 99 );
+
+        REQUIRE( std::equal(std::begin(x), std::begin(x) + 50, std::begin(v), std::end(v)) );
     }
 }
 

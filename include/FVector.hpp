@@ -118,6 +118,12 @@ public:
         reserve(sz);
     }
 
+    FVector(SizeType sz, const T& t){
+        reserve(sz);
+        for(SizeType i = 0; i < sz; i++)
+            push_back(t);
+    }
+
     FVector(std::initializer_list<T> ls){
         emplace_back(ls);
     }
