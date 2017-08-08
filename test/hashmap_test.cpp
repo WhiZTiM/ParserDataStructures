@@ -101,7 +101,86 @@ TEST_CASE( "HashMaps should work", "[hash_map]" ) {
         REQUIRE( mp.find("Vaha") == mp.end() );
         REQUIRE( mp.size() == mpSize - 2 );
 
+        mp.erase("Vaha");
+        REQUIRE( mp.find("Vaha") == mp.end() );
+
     }
+    SECTION(" Erasing or extracting works"){
+
+        mp["Sani"] = 435;
+        mp["Mako"] = 435;
+        mp["Tim"] = 435;
+        mp["Sani"] = 435;
+        REQUIRE(mp.size() == mpSize + 3);
+
+
+        REQUIRE(mp.erase("Sani") == 1);
+        REQUIRE(mp.size() == mpSize + 2);
+
+        auto nxt = mp.find("Mako")++;   //next iterator after "Mako"
+        REQUIRE(mp.erase(mp.find("Mako")) == nxt ); //assert erase returns the next iterator
+        REQUIRE(mp.size() == mpSize + 1 );
+
+        REQUIRE(mp.find("Tim") != mp.end());
+        auto node = mp.extract("Tim");
+        REQUIRE(mp.find("Tim") == mp.end());
+        REQUIRE(mp.size() == mpSize);
+    }
+
+    SECTION( "Test extraction and merging" ){
+        mp["Sani"] = 435;
+        mp["Mako"] = 435;
+        mp["Tim"] = 435;
+        mp["Sani"] = 435;
+        REQUIRE(mp.size() == mpSize + 3);
+
+        auto sani = mp.extract("Sani");
+        REQUIRE(mp.find("Sani") == mp.end());
+        REQUIRE(mp.size() == mpSize + 2);
+        REQUIRE(sani.is_empty() == false);
+
+        auto tim = mp.extract(mp.find("Tim"));
+        REQUIRE(mp.find("Tim") == mp.end());
+        REQUIRE(mp.size() == mpSize + 1);
+        REQUIRE(tim.is_empty() == false);
+
+        auto mako = mp.extract(FString("Mako"));
+        REQUIRE(mp.find("Mako") == mp.end());
+        REQUIRE(mp.size() == mpSize);
+        REQUIRE(mako.is_empty() == false);
+
+        auto james = mp.extract("Hullabaloo");
+        REQUIRE(mp.find("Hullabaloo") == mp.end());
+        REQUIRE(mp.size() == mpSize);
+        REQUIRE(james.is_empty() == true);
+
+        ////////  INSERTION   ////////
+        auto sI = mp.insert(std::move(sani));
+        REQUIRE(sI.inserted == true);
+        REQUIRE(sI.node.is_empty() == true);
+        REQUIRE(sI.position == mp.find("Sani"));
+        REQUIRE(mp.size() == mpSize + 1);
+
+        mp["Tim"] = 789;
+        auto tI = mp.insert(std::move(tim));
+        REQUIRE(tI.inserted == false);
+        REQUIRE(tI.node.is_empty() == false);
+        REQUIRE(tI.position == mp.find("Tim"));
+        REQUIRE(mp.size() == mpSize + 2);
+
+        auto mI = mp.insert(std::move(mako));
+        REQUIRE(mI.inserted == true);
+        REQUIRE(mI.node.is_empty() == true);
+        REQUIRE(mI.position != mp.find("Tim"));
+        REQUIRE(mI.position == mp.find("Mako"));
+        REQUIRE(mp.size() == mpSize + 3);
+
+        auto jI = mp.insert(std::move(james));
+        REQUIRE(jI.inserted == false);
+        REQUIRE(jI.node.is_empty() == true);
+        REQUIRE(jI.position == mp.end());
+    }
+
     SECTION( "Return value of insert works "){
         auto x = mp.insert(std::make_pair(Str("lol"), 6541));   // "lol" is a new key
         auto y = mp.insert(std::make_pair(Str("loki"), 65414)); // "loki was already inserted earlier

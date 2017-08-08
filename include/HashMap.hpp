@@ -121,6 +121,15 @@ class HashMap
         //non-const iterators are implicitly convertible to const_iterator
         operator Iterator<true> () const { return Iterator<true>{hashMap, currentNode, idx}; }
 
+    private:
+        //convert from const_iterator to non-const iterator
+        static Iterator<false> toNonConstIterator(Iterator<true> iter) {
+            return Iterator<false>{ const_cast<HashMap*>(iter.hashMap),
+                                    const_cast<HashNode*>(iter.currentNode),
+                                    iter.idx};
+        }
+    public:
+
         reference operator* () const {
             return currentNode->data;
         }
@@ -197,6 +206,33 @@ public:
         using const_pointer = const value_type*;
         using const_reference = const value_type&;
 
+        struct node_type{
+            node_type() : m_data(nullptr) {}
+            node_type(node_type&& other) : m_data(other.m_data) { other.m_data = nullptr; }
+            node_type& operator = (node_type&& other) {
+                delete m_data;
+                m_data = other.m_data;
+                other.m_data = nullptr;
+                return *this;
+            }
+            bool is_empty() const { return m_data == nullptr; }
+            ~node_type() { delete m_data; }
+        private:
+            friend class HashMap<Key, Value>;
+  
+			node_type(HashNode* ptr) : m_data(ptr) {}
+            HashNode* data() { return m_data; }
+            HashNode* m_data;
+        };
+
+		template<typename Iter, typename NodeType> struct InsertReturnType{
+			Iter position;
+			bool inserted;
+			NodeType node;
+		};
+
+		using insert_return_type = InsertReturnType<iterator, node_type>;
+
         HashMap() {  /*******/  }
         ~HashMap(){  destroy(); }
 
@@ -248,6 +284,12 @@ public:
             return imbue_data(kv.first, std::move(kv.second), m_buckets, m_bucketSize);
         }
 
+		insert_return_type insert(node_type&& node){
+			if(node.is_empty())
+                return { end(), false, std::move(node) };
+			return imbue_node(std::move(node));
+		}
+
         Value& operator [] (const Key& ky){
             grow_memory_if_needed();
             return imbue_data(ky, Value{}, m_buckets, m_bucketSize).first->second;
@@ -265,37 +307,30 @@ public:
             return find(ky) != cend() ? 1 : 0;
         }
 
-        SizeType erase(const const_iterator& iter){
-            return erase(iter.currentNode->data.first);
+        iterator erase(const_iterator iter){
+            if(iter == cend())
+                return end();
+            delete disconnect_node((iter++)->first);
+            return iter.toNonConstIterator(iter);
+        }
+
+        node_type extract(const_iterator iter){
+            if(iter == cend())
+                return node_type();
+            return node_type(disconnect_node(iter->first));
+        }
+
+        node_type extract(const Key& key){
+            return node_type(disconnect_node(key));
         }
 
         SizeType erase(const Key& ky){
-            auto index = hash(ky, m_bucketSize);
-            auto& bucket = m_buckets[index];
-            auto left = bucket;
-            SizeType rtn = 0;
-
-            if(bucket){
-                if(bucket->data.first == ky){
-                    auto nxt = bucket->next;
-                    delete bucket;
-                    --m_nodeSize;
-                    ++rtn;
-                    bucket = nxt;
-                }
-                else{
-                    while(left->next && rtn==0){
-                        auto nxt = left->next->next;
-                        if(left->next->data.first == ky){
-                            delete left->next;
-                            --m_nodeSize;
-                            ++rtn;
-                        }
-                        left->next = nxt;
-                    }
-                }
+            auto node = disconnect_node(ky);
+            if(node){
+                delete node;
+                return 1;
             }
-            return rtn;
+            return 0;
         }
 
         inline void clear(){
@@ -369,6 +404,29 @@ public:
                 reserve(prVec[(m_bucketSize*2)+7]); //grow by a factor of 2... Add 7
         }
 
+        HashNode* disconnect_node(const Key& key){
+            auto index = hash(key, m_bucketSize);
+            auto& node = m_buckets[index];
+            HashNode* rtn = nullptr;
+            if(node && node->data.first == key){
+                rtn = node;
+                node = node->next;
+				m_nodeSize--;
+            }
+            else if(node){
+                for(auto n = node; n->next; n = n->next){
+                    if(n->next->data.first == key){
+                        rtn = n->next;
+                        n->next = n->next->next;
+						m_nodeSize--;
+                        break;
+                    }
+                }
+            }
+            return rtn;
+        }
+
+
         inline void destroy() noexcept {
             //cout << "Destructor: m_buckets:" << m_buckets << endl;
             for(SizeType i=0; i < m_bucketSize; i++){
@@ -413,6 +471,34 @@ public:
             ++counter;
             return {{this, node, index}, true};
         }
+
+		insert_return_type imbue_node(node_type&& handle){
+            auto index = hash(handle.data()->data.first, m_bucketSize);
+			auto& node = m_buckets[index];
+			if(node){
+				auto n = node;
+
+                //check that node does not already exist
+				while(true){
+					if(n->data.first == handle.data()->data.first)
+						return { {this, n, index}, false, std::move(handle)};
+					if(!n->next)
+						break;
+					n = n->next;
+				}
+				n->next = handle.data();
+				n->next->next = nullptr;
+				handle.m_data = nullptr;
+                m_nodeSize++;
+                return { {this, n->next, index}, true, {} };
+			}
+
+			node = handle.data();
+			node->next = nullptr;
+			handle.m_data = nullptr;
+            m_nodeSize++;
+            return {{this, node, index}, true, {}};
+		}
 
         inline iterator FORCE_INLINE getNode(const Key& ky) {
             if(m_bucketSize == 0)
