@@ -473,6 +473,7 @@ public:
         }
 
 		insert_return_type imbue_node(node_type&& handle){
+            grow_memory_if_needed();
             auto index = hash(handle.data()->data.first, m_bucketSize);
 			auto& node = m_buckets[index];
 			if(node){
